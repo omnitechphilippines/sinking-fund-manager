@@ -23,6 +23,7 @@ class SinkingFundManager extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       routerConfig: router,
       theme: ThemeData(
+        fontFamily: 'Roboto',
         colorScheme: kColorScheme,
         appBarTheme: AppBarTheme(foregroundColor: kColorScheme.primaryContainer, backgroundColor: kColorScheme.onPrimaryContainer),
         cardTheme: CardThemeData(color: kColorScheme.secondaryContainer, margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4)),
@@ -35,7 +36,6 @@ class SinkingFundManager extends StatelessWidget {
       ),
       darkTheme: ThemeData.dark().copyWith(
         colorScheme: kDarkColorScheme,
-        // appBarTheme: AppBarTheme(foregroundColor: kDarkColorScheme.primaryContainer, backgroundColor: kDarkColorScheme.onPrimaryContainer),
         cardTheme: CardThemeData(color: kDarkColorScheme.secondaryContainer, margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4)),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(foregroundColor: kDarkColorScheme.onPrimaryContainer, backgroundColor: kDarkColorScheme.primaryContainer),

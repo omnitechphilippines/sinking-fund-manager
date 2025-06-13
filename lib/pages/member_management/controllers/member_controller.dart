@@ -62,22 +62,6 @@ class MemberController extends Notifier<List<Member>> {
     state = state.where((Member m) => m.id != memberToDelete.id).toList();
   }
 
-  // void sortMembers(MemberSortType sortType) {
-  //   final List<Member> sortedList = <Member>[...state];
-  //   switch (sortType) {
-  //     case MemberSortType.name:
-  //       sortedList.sort((Member a, Member b) => a.name.compareTo(b.name));
-  //       break;
-  //     case MemberSortType.contribution:
-  //       sortedList.sort((Member a, Member b) => b.contributionAmount.compareTo(a.contributionAmount));
-  //       break;
-  //     case MemberSortType.numberOfHeads:
-  //       sortedList.sort((Member a, Member b) => b.numberOfHeads.compareTo(a.numberOfHeads));
-  //       break;
-  //   }
-  //   state = sortedList;
-  // }
-
   void setSort(MemberSortType type, SortDirection direction) {
     _sortType = type;
     _sortDirection = direction;

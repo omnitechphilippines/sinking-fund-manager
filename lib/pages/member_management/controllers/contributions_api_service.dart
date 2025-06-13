@@ -13,7 +13,7 @@ class ContributionsApiService {
       final List<dynamic> data = jsonDecode(response.body);
       return data.map((dynamic json) => Contribution.fromJson(json)).toList();
     } else {
-      throw Exception('Members API failed: ${response.body}');
+      throw Exception('Contributions API failed: ${response.body}');
     }
   }
 
@@ -28,29 +28,29 @@ class ContributionsApiService {
     if (response.statusCode == 201 || response.statusCode == 200) {
       return jsonDecode(response.body)['affectedRows'] == 1 ? 'success' : 'failed';
     } else {
-      throw Exception('Add Member failed: ${response.body}');
+      throw Exception('Add Contribution failed: ${response.body}');
     }
   }
 
   /// Get contribution by ID
   Future<Contribution> getContributionById(String id) async {
-    final http.Response response = await http.get(Uri.parse('$baseUrl/$id'));
+    final http.Response response = await http.get(Uri.parse('$baseUrl/id/$id'));
 
     if (response.statusCode == 200) {
       return Contribution.fromJson(jsonDecode(response.body).first);
     } else {
-      throw Exception('Get Member by ID failed: ${response.body}');
+      throw Exception('Get Contribution by ID failed: ${response.body}');
     }
   }
 
   /// Get contributions by name
-  Future<Contribution> getContributionsByName(String id) async {
-    final http.Response response = await http.get(Uri.parse('$baseUrl/$id'));
+  Future<Contribution> getContributionsByName(String name) async {
+    final http.Response response = await http.get(Uri.parse('$baseUrl/name/$name'));
 
     if (response.statusCode == 200) {
       return Contribution.fromJson(jsonDecode(response.body).first);
     } else {
-      throw Exception('Get Member by ID failed: ${response.body}');
+      throw Exception('Get Contribution by Name failed: ${response.body}');
     }
   }
 
@@ -59,7 +59,7 @@ class ContributionsApiService {
     final http.Response response = await http.delete(Uri.parse('$baseUrl/$id'));
 
     if (response.statusCode != 200 && response.statusCode != 204) {
-      throw Exception('Delete Member failed: ${response.body}');
+      throw Exception('Delete Contribution failed: ${response.body}');
     }
   }
 }

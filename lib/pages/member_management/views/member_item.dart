@@ -4,8 +4,10 @@ import 'package:sinking_fund_manager/components/member_dialog.dart';
 
 import '../../../components/confirm_dialog.dart';
 import '../../../components/contribution_dialog.dart';
+import '../controllers/contribution_controller.dart';
 import '../controllers/member_controller.dart';
 import '../controllers/members_api_service.dart';
+import '../models/contribution.dart';
 import '../models/member.dart';
 
 class MemberItem extends ConsumerStatefulWidget {
@@ -50,11 +52,26 @@ class _MemberItemState extends ConsumerState<MemberItem> {
                       spacing: 4,
                       children: <Widget>[
                         IconButton(
-                          onPressed: () async => await showDialog(
-                            barrierDismissible: false,
-                            context: context,
-                            builder: (BuildContext _) => ContributionDialog(name: widget.member.name),
-                          ),
+                          onPressed: () async {
+                            final List<dynamic>? result = await showDialog(
+                              barrierDismissible: false,
+                              context: context,
+                              builder: (BuildContext _) => ContributionDialog(name: widget.member.name, contributionAmount: widget.member.contributionAmount),
+                            );
+                            if (result != null && result.isNotEmpty) {
+                              final Contribution newContribution = result.first;
+                              ref.read(contributionControllerProvider.notifier).addContribution(newContribution);
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    backgroundColor: Colors.green,
+                                    content: Text('Contribution for member "${newContribution.name}" on ${newContribution.paymentDateTime} was successfully added!', style: const TextStyle(color: Colors.white)),
+                                  ),
+                                );
+                              }
+                            }
+                          },
                           icon: const Icon(Icons.add_circle_sharp),
                         ),
                         IconButton(

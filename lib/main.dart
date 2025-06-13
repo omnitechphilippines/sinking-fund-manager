@@ -33,6 +33,17 @@ class SinkingFundManager extends StatelessWidget {
           titleMedium: TextStyle(color: kColorScheme.onSecondaryContainer, fontSize: 14),
           titleSmall: TextStyle(color: kColorScheme.onSecondaryContainer),
         ),
+        datePickerTheme: DatePickerThemeData(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4))),
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4))),
+        ),
+        dialogTheme: DialogThemeData(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4))),
+        timePickerTheme: TimePickerThemeData(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+          helpTextStyle: TextStyle(color: kColorScheme.onSecondaryContainer),
+          hourMinuteShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+          dayPeriodShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+        ),
       ),
       darkTheme: ThemeData.dark().copyWith(
         colorScheme: kDarkColorScheme,
@@ -44,6 +55,17 @@ class SinkingFundManager extends StatelessWidget {
           titleLarge: TextStyle(fontWeight: FontWeight.bold, color: kDarkColorScheme.onSecondaryContainer, fontSize: 16),
           titleMedium: TextStyle(color: kDarkColorScheme.onSecondaryContainer, fontSize: 14),
           titleSmall: TextStyle(color: kDarkColorScheme.onSecondaryContainer),
+        ),
+        datePickerTheme: DatePickerThemeData(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4))),
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4))),
+        ),
+        dialogTheme: DialogThemeData(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4))),
+        timePickerTheme: TimePickerThemeData(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+          helpTextStyle: TextStyle(color: kDarkColorScheme.onSecondaryContainer),
+          hourMinuteShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+          dayPeriodShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
         ),
       ),
     );

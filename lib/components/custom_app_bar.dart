@@ -26,7 +26,7 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
           padding: EdgeInsets.zero,
           offset: const Offset(0, 40),
           itemBuilder:
-              (_) => <PopupMenuEntry<String>>[
+              (BuildContext _) => <PopupMenuEntry<String>>[
                 PopupMenuItem<String>(enabled: false, value: '', child: Row(children: <Widget>[const Icon(Icons.person, color: Colors.grey,), const SizedBox(width: 8), Text(auth.user ?? authBox.get('user'))])),
                 const PopupMenuDivider(),
                 const PopupMenuItem<String>(value: 'logout', child: Row(children: <Widget>[Icon(Icons.logout, color: Colors.red), SizedBox(width: 8), Text('Logout')])),

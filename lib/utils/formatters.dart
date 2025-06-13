@@ -1,6 +1,7 @@
 import 'package:intl/intl.dart';
 
 final DateFormat dateFormatter = DateFormat.yMd();
+final DateFormat dateTimeFormatter = DateFormat('MM/dd/yyyy hh:mm a');
 
 final NumberFormat numberFormatter = NumberFormat('#,##0.00');
 

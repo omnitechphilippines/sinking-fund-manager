@@ -10,7 +10,7 @@ class SideNav extends StatelessWidget {
   Widget build(BuildContext context) {
     return Drawer(
       backgroundColor: const Color(0xFF222D32),
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
       child: ListView(
         children: <Widget>[
           const DrawerHeader(

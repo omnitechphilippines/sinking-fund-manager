@@ -26,7 +26,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
+    WidgetsBinding.instance.addPostFrameCallback((Duration _) async {
       _userIdFocus.requestFocus();
       info = await PackageInfo.fromPlatform();
       setState(() {});
@@ -62,13 +62,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       if (next.status == AuthStatus.failure) {
         showDialog(
           context: context,
-          builder: (_) {
-            return AlertDialog(
+          builder: (BuildContext _) => AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
               title: const Text('Login Failed'),
               content: Text(next.error.toString().contains('fetch') ? 'Server connection error!' : next.error ?? 'Incorrect user name or password'),
               actions: <Widget>[TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))],
-            );
-          },
+            ),
         );
       }
     });

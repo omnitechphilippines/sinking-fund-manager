@@ -10,7 +10,6 @@ class NotFoundPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // return const Scaffold(body: Center(child: Text('Not Found')));
     return Scaffold(
       appBar: const CustomAppBar(title: 'Not Found'),
       drawer: SideNav(currentRoute: GoRouter.of(context).routerDelegate.currentConfiguration.uri.toString()),

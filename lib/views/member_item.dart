@@ -85,7 +85,7 @@ class _MemberItemState extends ConsumerState<MemberItem> {
                             setState(() => _isLoading = true);
                             try {
                               if (shouldDelete) {
-                                await MembersApiService().deleteMemberById(widget.member.id);
+                                await MembersApiService().deleteMemberByName(widget.member.name);
                                 if (context.mounted) {
                                   ref.read(memberControllerProvider.notifier).deleteMember(widget.member);
                                   ScaffoldMessenger.of(context).hideCurrentSnackBar();

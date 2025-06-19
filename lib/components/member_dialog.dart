@@ -66,7 +66,7 @@ class _MemberDialogState extends ConsumerState<MemberDialog> {
           id: id,
           name: capitalize(_nameController.text.trim()),
           numberOfHeads: int.parse(_numberOfHeadsController.text),
-          contributionAmount: double.parse(_contributionAmountController.text.substring(1).replaceAll(',', '')),
+          contributionAmount: double.parse(_contributionAmountController.text.replaceAll(',', '')),
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         ),
@@ -104,10 +104,12 @@ class _MemberDialogState extends ConsumerState<MemberDialog> {
   @override
   Widget build(BuildContext context) {
     List<ContributionModel> contributionsByName = <ContributionModel>[];
+    double totalContributionByName = 0;
     if (widget.member != null) {
       final List<ContributionModel> allContributions = ref.read(contributionControllerProvider);
       contributionsByName = allContributions.where((ContributionModel c) => c.name == widget.member?.name).toList();
       contributionsByName.sort((ContributionModel a, ContributionModel b) => a.contributionDate.compareTo(b.contributionDate));
+      totalContributionByName = contributionsByName.fold<double>(0.0, (double sum, ContributionModel contribution) => sum + contribution.contributionAmount);
     }
     return KeyboardListener(
       autofocus: true,
@@ -162,7 +164,7 @@ class _MemberDialogState extends ConsumerState<MemberDialog> {
                         keyboardType: TextInputType.number,
                         inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
                         style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color?.withValues(alpha: widget.member == null ? 1 : 0.5)),
-                        onChanged: (String value) => _contributionAmountController.text = value.isNotEmpty ? '₱ ${numberFormatter.format((int.parse(value) * ref.read(settingControllerProvider)!.amountPerHead))}' : '',
+                        onChanged: (String value) => _contributionAmountController.text = value.isNotEmpty ? numberFormatter.format((int.parse(value) * ref.read(settingControllerProvider)!.amountPerHead)) : '',
                         focusNode: _numberOfHeadsControllerFocusNode,
                         onSubmitted: (String _) => _addMember(),
                         readOnly: widget.member == null ? false : true,
@@ -172,7 +174,11 @@ class _MemberDialogState extends ConsumerState<MemberDialog> {
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: TextField(
                         controller: _contributionAmountController,
-                        decoration: const InputDecoration(labelText: 'Contribution Amount'),
+                        decoration: InputDecoration(
+                          labelText: 'Contribution Amount',
+                          prefixText: '₱ ',
+                          prefixStyle: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color?.withValues(alpha: 0.5)),
+                        ),
                         keyboardType: TextInputType.number,
                         readOnly: true,
                         style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color?.withValues(alpha: 0.5)),
@@ -206,7 +212,7 @@ class _MemberDialogState extends ConsumerState<MemberDialog> {
                         : contributionsByName.isEmpty
                         ? Padding(
                             padding: const EdgeInsets.all(16),
-                            child: Text('No contributions found.', style: Theme.of(context).textTheme.titleLarge),
+                            child: Text('No contributions yet.', style: Theme.of(context).textTheme.titleLarge),
                           )
                         : Padding(
                             padding: const EdgeInsets.symmetric(vertical: 16.0),
@@ -222,7 +228,7 @@ class _MemberDialogState extends ConsumerState<MemberDialog> {
                                     return Card(
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                                       child: ListTile(
-                                        title: Text('Date: ${dateFormatter.format(contribution.contributionDate)}', style: Theme.of(context).textTheme.titleMedium),
+                                        title: Text('₱ ${contribution.formattedContributionAmount}   ${dateFormatter.format(contribution.contributionDate)}', style: Theme.of(context).textTheme.titleMedium),
                                         subtitle: Text('Paid Date: ${dateTimeFormatter.format(contribution.paymentDateTime)}', style: TextStyle(fontSize: Theme.of(context).textTheme.bodySmall?.fontSize)),
                                         trailing: contribution.proof != null
                                             ? InkWell(
@@ -242,13 +248,15 @@ class _MemberDialogState extends ConsumerState<MemberDialog> {
                                     );
                                   },
                                 ),
-
                                 RichText(
                                   text: TextSpan(
                                     style: Theme.of(context).textTheme.titleLarge,
                                     children: <InlineSpan>[
                                       const TextSpan(text: 'Total contribution: '),
-                                      TextSpan(text: '₱ ${contributionsByName[0].formattedContributionAmount}', style: const TextStyle(color: Colors.blue)),
+                                      TextSpan(
+                                        text: '₱ ${numberFormatter.format(totalContributionByName)}',
+                                        style: const TextStyle(color: Colors.blue),
+                                      ),
                                     ],
                                   ),
                                 ),

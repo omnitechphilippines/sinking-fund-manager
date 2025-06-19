@@ -44,8 +44,8 @@ class MembersApiService {
   }
 
   /// Delete member by ID
-  Future<void> deleteMemberById(String id) async {
-    final http.Response response = await http.delete(Uri.parse('$baseUrl/$id'));
+  Future<void> deleteMemberByName(String name) async {
+    final http.Response response = await http.delete(Uri.parse('$baseUrl/$name'));
 
     if (response.statusCode != 200 && response.statusCode != 204) {
       throw Exception('Delete Member failed: ${response.body}');

@@ -18,6 +18,7 @@ import '../../../models/contribution_model.dart';
 import '../controllers/setting_controller.dart';
 import '../models/member_model.dart';
 import '../../../views/member_item.dart';
+import '../utils/formatters.dart';
 
 class MemberManagementPage extends ConsumerStatefulWidget {
   const MemberManagementPage({super.key});
@@ -98,6 +99,8 @@ class _MemberManagementPageState extends ConsumerState<MemberManagementPage> {
   @override
   Widget build(BuildContext context) {
     final List<MemberModel> members = ref.watch(memberControllerProvider);
+    final List<ContributionModel> contributions = ref.watch(contributionControllerProvider);
+    final double totalContributions = contributions.fold(0.0, (double sum, ContributionModel contribution)=>sum+contribution.contributionAmount);
     // final List<ContributionModel> contributions = ref.watch(contributionControllerProvider);
     final SettingModel? setting = ref.watch(settingControllerProvider);
     return Scaffold(
@@ -124,7 +127,6 @@ class _MemberManagementPageState extends ConsumerState<MemberManagementPage> {
                       child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 1000), child: isSmallScreen ? _buildSmallScreenHeader() : _buildLargeScreenHeader()),
                     ),
                     const Divider(height: 1),
-
                     Expanded(
                       child: Scrollbar(
                         thumbVisibility: true,
@@ -135,41 +137,58 @@ class _MemberManagementPageState extends ConsumerState<MemberManagementPage> {
                           child: Center(
                             child: ConstrainedBox(
                               constraints: const BoxConstraints(maxWidth: 1000),
-                              child: ListView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemCount: members.length,
-                                itemBuilder: (BuildContext ctx, int idx) => Dismissible(
-                                  key: ValueKey<String>(members[idx].id),
-                                  confirmDismiss: (DismissDirection direction) async {
-                                    return await showConfirmDialog(context: context, title: 'Confirm Deletion', message: 'Are you sure you want to delete "${members[idx].name}"?', confirmText: 'Delete', cancelText: 'Cancel');
-                                  },
-                                  onDismissed: (DismissDirection direction) async {
-                                    setState(() => _isLoading = true);
-                                    try {
-                                      await MembersApiService().deleteMemberById(members[idx].id);
-                                      if (context.mounted) {
-                                        ref.read(memberControllerProvider.notifier).deleteMember(members[idx]);
-                                        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Member "${members[idx].name}" was successfully deleted!'), duration: const Duration(seconds: 5)));
-                                      }
-                                    } catch (e) {
-                                      if (context.mounted) {
-                                        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            backgroundColor: Colors.red,
-                                            content: Text('Error: $e', style: const TextStyle(color: Colors.white)),
-                                          ),
-                                        );
-                                      }
-                                    } finally {
-                                      setState(() => _isLoading = false);
-                                    }
-                                  },
-                                  background: Container(color: Theme.of(context).colorScheme.error.withValues(alpha: 0.75), margin: Theme.of(context).cardTheme.margin),
-                                  child: MemberItem(member: members[idx]),
-                                ),
+                              child: Column(
+                                spacing: 8,
+                                children: <Widget>[
+                                  ListView.builder(
+                                    shrinkWrap: true,
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    itemCount: members.length,
+                                    itemBuilder: (BuildContext ctx, int idx) => Dismissible(
+                                      key: ValueKey<String>(members[idx].id),
+                                      confirmDismiss: (DismissDirection direction) async {
+                                        return await showConfirmDialog(context: context, title: 'Confirm Deletion', message: 'Are you sure you want to delete "${members[idx].name}"?', confirmText: 'Delete', cancelText: 'Cancel');
+                                      },
+                                      onDismissed: (DismissDirection direction) async {
+                                        setState(() => _isLoading = true);
+                                        try {
+                                          await MembersApiService().deleteMemberByName(members[idx].name);
+                                          if (context.mounted) {
+                                            ref.read(memberControllerProvider.notifier).deleteMember(members[idx]);
+                                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Member "${members[idx].name}" was successfully deleted!'), duration: const Duration(seconds: 5)));
+                                          }
+                                        } catch (e) {
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(
+                                                backgroundColor: Colors.red,
+                                                content: Text('Error: $e', style: const TextStyle(color: Colors.white)),
+                                              ),
+                                            );
+                                          }
+                                        } finally {
+                                          setState(() => _isLoading = false);
+                                        }
+                                      },
+                                      background: Container(color: Theme.of(context).colorScheme.error.withValues(alpha: 0.75), margin: Theme.of(context).cardTheme.margin),
+                                      child: MemberItem(member: members[idx]),
+                                    ),
+                                  ),
+                                  RichText(
+                                    text: TextSpan(
+                                      style: Theme.of(context).textTheme.titleLarge,
+                                      children: <InlineSpan>[
+                                        const TextSpan(text: 'Total contribution: '),
+                                        TextSpan(
+                                          text: '₱ ${numberFormatter.format(totalContributions)}',
+                                          style: const TextStyle(color: Colors.blue),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),

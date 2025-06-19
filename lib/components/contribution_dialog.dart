@@ -26,18 +26,18 @@ class _ContributionDialogState extends ConsumerState<ContributionDialog> {
   late final TextEditingController _nameController = TextEditingController();
   late final TextEditingController _contributionAmountController = TextEditingController();
   late final TextEditingController _paymentDateTimeController = TextEditingController();
-  final FocusNode _paymentDateTimeControllerFocusNode = FocusNode();
+  final FocusNode _contributionAmountControllerFocusNode = FocusNode();
   Uint8List? _proofImageBytes;
   String? _proofImageName;
   late DateTime _contributionDate;
+  String _hintText='';
 
   @override
   void initState() {
     super.initState();
     _nameController.text = widget.name;
-    _contributionAmountController.text = '₱ ${numberFormatter.format(widget.contributionAmount)}';
     _paymentDateTimeController.text = dateTimeFormatter.format(DateTime.now());
-    _paymentDateTimeControllerFocusNode.requestFocus();
+    _contributionAmountControllerFocusNode.requestFocus();
     final List<ContributionModel> allContributions = ref.read(contributionControllerProvider);
     final List<ContributionModel> contributionsByName = allContributions.where((ContributionModel c) => c.name == widget.name).toList();
     contributionsByName.sort((ContributionModel a, ContributionModel b) => b.contributionDate.compareTo(a.contributionDate));
@@ -45,7 +45,15 @@ class _ContributionDialogState extends ConsumerState<ContributionDialog> {
       _contributionDate = contributionsByName[0].contributionDate;
       final int lastDayOfMonth = DateTime(_contributionDate.year, _contributionDate.month + 1, 0).day;
       final bool is15 = _contributionDate.day == 15;
-      _contributionDate = is15 ? DateTime(_contributionDate.year, _contributionDate.month, lastDayOfMonth) : DateTime(_contributionDate.year, _contributionDate.month + 1, 15);
+      final List<ContributionModel> contributionsByNameAndDate = contributionsByName.where((ContributionModel c) => c.contributionDate == _contributionDate).toList();
+      final double totalContributionByDate = contributionsByNameAndDate.fold<double>(0.0, (double sum, ContributionModel contribution) => sum + contribution.contributionAmount);
+      if (totalContributionByDate == widget.contributionAmount) {
+        _contributionDate = is15 ? DateTime(_contributionDate.year, _contributionDate.month, lastDayOfMonth) : DateTime(_contributionDate.year, _contributionDate.month + 1, 15);
+        _hintText='not yet paid';
+      }
+      else{
+        _hintText='partially paid ₱ ${numberFormatter.format(totalContributionByDate)}';
+      }
     } else {
       _contributionDate = ref.read(settingControllerProvider)!.startingDate;
     }
@@ -56,7 +64,7 @@ class _ContributionDialogState extends ConsumerState<ContributionDialog> {
     _nameController.dispose();
     _contributionAmountController.dispose();
     _paymentDateTimeController.dispose();
-    _paymentDateTimeControllerFocusNode.dispose();
+    _contributionAmountControllerFocusNode.dispose();
     super.dispose();
   }
 
@@ -80,7 +88,7 @@ class _ContributionDialogState extends ConsumerState<ContributionDialog> {
           id: id,
           name: widget.name,
           contributionDate: _contributionDate,
-          contributionAmount: double.parse(_contributionAmountController.text.substring(1).replaceAll(',', '')),
+          contributionAmount: double.parse(_contributionAmountController.text.replaceAll(',', '')),
           paymentDateTime: dateTimeFormatter.parse(_paymentDateTimeController.text),
           proof: _proofImageBytes,
           createdAt: DateTime.now(),
@@ -199,15 +207,23 @@ class _ContributionDialogState extends ConsumerState<ContributionDialog> {
                               padding: const EdgeInsets.symmetric(horizontal: 16),
                               child: TextField(
                                 controller: _contributionAmountController,
-                                decoration: const InputDecoration(labelText: 'Contribution Amount ()'),
-                                readOnly: true,
+                                keyboardType: TextInputType.number,
+                                inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
+                                decoration: InputDecoration(
+                                  prefixText: '₱ ',
+                                  prefixStyle: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color),
+                                  labelText: 'Contribution Amount (₱ ${numberFormatter.format(widget.contributionAmount)})',
+                                  hintText: _hintText,
+                                  hintStyle: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color?.withValues(alpha: 0.5)),
+                                ),
                                 onSubmitted: (String _) {
                                   _contributionAmountController.text = _contributionAmountController.text.contains(',') || _contributionAmountController.text.isEmpty
                                       ? _contributionAmountController.text
                                       : numberFormatter.format(int.parse(_contributionAmountController.text));
                                   _dateTimePicker();
                                 },
-                                style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color?.withValues(alpha: 0.5)),
+                                focusNode: _contributionAmountControllerFocusNode,
+                                style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color),
                               ),
                             ),
                             Padding(
@@ -228,7 +244,7 @@ class _ContributionDialogState extends ConsumerState<ContributionDialog> {
                                       style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color?.withValues(alpha: 0.5)),
                                     ),
                                   ),
-                                  IconButton(focusNode: _paymentDateTimeControllerFocusNode, onPressed: _dateTimePicker, icon: const Icon(Icons.calendar_month)),
+                                  IconButton(onPressed: _dateTimePicker, icon: const Icon(Icons.calendar_month)),
                                 ],
                               ),
                             ),

@@ -7,13 +7,12 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive_flutter/adapters.dart';
 
-import 'pages/contribution_tracking/views/contribution_tracking_page.dart';
-import 'pages/loan_management/views/loan_management_page.dart';
-import 'pages/member_management/views/member_management_page.dart';
-import 'pages/login/views/login_page.dart';
-import 'pages/not_found/not_found_page.dart';
-import 'pages/reports/views/reports_page.dart';
-import 'pages/settings/views/settings_page.dart';
+import 'views/contribution_tracking_page.dart';
+import 'views/loan_management_page.dart';
+import 'views/login_page.dart';
+import 'views/member_management_page.dart';
+import 'views/not_found_page.dart';
+import 'views/reports_page.dart';
 
 @JS('title')
 external set documentTitle(String title);
@@ -59,13 +58,6 @@ final GoRouter router = GoRouter(
       builder: (BuildContext context, GoRouterState state) {
         documentTitle = 'Reports';
         return const ReportsPage();
-      },
-    ),
-    GoRoute(
-      path: '/settings',
-      builder: (BuildContext context, GoRouterState state) {
-        documentTitle = 'Settings';
-        return const SettingsPage();
       },
     ),
   ],

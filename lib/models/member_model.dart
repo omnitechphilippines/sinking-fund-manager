@@ -1,6 +1,6 @@
 import '../../../utils/formatters.dart';
 
-class Member {
+class MemberModel {
   final String id;
   final String name;
   final int numberOfHeads;
@@ -8,10 +8,10 @@ class Member {
   final DateTime createdAt;
   final DateTime updatedAt;
 
-  Member({required this.id, required this.name, required this.numberOfHeads, required this.contributionAmount, required this.createdAt, required this.updatedAt});
+  MemberModel({required this.id, required this.name, required this.numberOfHeads, required this.contributionAmount, required this.createdAt, required this.updatedAt});
 
-  factory Member.fromJson(Map<String, dynamic> json) {
-    return Member(
+  factory MemberModel.fromJson(Map<String, dynamic> json) {
+    return MemberModel(
       id: json['id'],
       name: json['name'],
       numberOfHeads: int.parse(json['number_of_heads'].toString()),
@@ -25,9 +25,5 @@ class Member {
     return <String, dynamic>{'id': id, 'name': name, 'number_of_heads': numberOfHeads, 'contribution_amount': contributionAmount, 'created_at': createdAt.toString(), 'updated_at': updatedAt.toString()};
   }
 
-  String get formattedCreatedDate => dateFormatter.format(createdAt);
-
-  String get formattedUpdatedDate => dateFormatter.format(updatedAt);
-
-  String get formattedNumber => numberFormatter.format(contributionAmount);
+  String get formattedContributionAmount => numberFormatter.format(contributionAmount);
 }

@@ -1,24 +1,27 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sinking_fund_manager/controllers/setting_controller.dart';
 import 'package:uuid/uuid.dart';
 
-import '../pages/member_management/controllers/contributions_api_service.dart';
-import '../pages/member_management/models/contribution.dart';
+import '../api_services/contributions_api_service.dart';
+import '../controllers/contribution_controller.dart';
+import '../models/contribution_model.dart';
 import '../utils/formatters.dart';
 import '../widgets/buttons/custom_icon_button.dart';
 
-class ContributionDialog extends StatefulWidget {
+class ContributionDialog extends ConsumerStatefulWidget {
   final String name;
   final double contributionAmount;
 
   const ContributionDialog({super.key, required this.name, required this.contributionAmount});
 
   @override
-  State<ContributionDialog> createState() => _ContributionDialogState();
+  ConsumerState<ContributionDialog> createState() => _ContributionDialogState();
 }
 
-class _ContributionDialogState extends State<ContributionDialog> {
+class _ContributionDialogState extends ConsumerState<ContributionDialog> {
   bool _isLoading = false;
   late final TextEditingController _nameController = TextEditingController();
   late final TextEditingController _contributionAmountController = TextEditingController();
@@ -26,16 +29,26 @@ class _ContributionDialogState extends State<ContributionDialog> {
   final FocusNode _paymentDateTimeControllerFocusNode = FocusNode();
   Uint8List? _proofImageBytes;
   String? _proofImageName;
+  late DateTime _contributionDate;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((Duration _) {
-      _nameController.text = widget.name;
-      _contributionAmountController.text = '₱ ${numberFormatter.format(widget.contributionAmount)}';
-      _paymentDateTimeController.text = dateTimeFormatter.format(DateTime.now());
-      _paymentDateTimeControllerFocusNode.requestFocus();
-    });
+    _nameController.text = widget.name;
+    _contributionAmountController.text = '₱ ${numberFormatter.format(widget.contributionAmount)}';
+    _paymentDateTimeController.text = dateTimeFormatter.format(DateTime.now());
+    _paymentDateTimeControllerFocusNode.requestFocus();
+    final List<ContributionModel> allContributions = ref.read(contributionControllerProvider);
+    final List<ContributionModel> contributionsByName = allContributions.where((ContributionModel c) => c.name == widget.name).toList();
+    contributionsByName.sort((ContributionModel a, ContributionModel b) => b.contributionDate.compareTo(a.contributionDate));
+    if (contributionsByName.isNotEmpty) {
+      _contributionDate = contributionsByName[0].contributionDate;
+      final int lastDayOfMonth = DateTime(_contributionDate.year, _contributionDate.month + 1, 0).day;
+      final bool is15 = _contributionDate.day == 15;
+      _contributionDate = is15 ? DateTime(_contributionDate.year, _contributionDate.month, lastDayOfMonth) : DateTime(_contributionDate.year, _contributionDate.month + 1, 15);
+    } else {
+      _contributionDate = ref.read(settingControllerProvider)!.startingDate;
+    }
   }
 
   @override
@@ -62,20 +75,22 @@ class _ContributionDialogState extends State<ContributionDialog> {
     setState(() => _isLoading = true);
     try {
       final String id = const Uuid().v4();
-      final String response = await ContributionsApiService().addContribution(
-        Contribution(
+      final bool response = await ContributionsApiService().addContribution(
+        ContributionModel(
           id: id,
           name: widget.name,
+          contributionDate: _contributionDate,
           contributionAmount: double.parse(_contributionAmountController.text.substring(1).replaceAll(',', '')),
           paymentDateTime: dateTimeFormatter.parse(_paymentDateTimeController.text),
           proof: _proofImageBytes,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         ),
+        _proofImageName,
       );
-      if (response == 'success') {
-        final Contribution newContribution = await ContributionsApiService().getContributionById(id);
-        if (mounted) Navigator.of(context).pop(<Contribution>[newContribution]);
+      if (response) {
+        final ContributionModel newContribution = await ContributionsApiService().getContributionById(id);
+        if (mounted) Navigator.of(context).pop(<ContributionModel>[newContribution]);
       } else {
         if (mounted) {
           final String dateTime = dateTimeFormatter.format(dateTimeFormatter.parse(_paymentDateTimeController.text));
@@ -83,7 +98,7 @@ class _ContributionDialogState extends State<ContributionDialog> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               backgroundColor: Colors.red,
-              content: Text('Adding new contribution to "${widget.name}" on ${dateTime} failed!', style: const TextStyle(color: Colors.white)),
+              content: Text('Adding new contribution to member "${widget.name}" on $dateTime failed!', style: const TextStyle(color: Colors.white)),
             ),
           );
           return;
@@ -136,133 +151,144 @@ class _ContributionDialogState extends State<ContributionDialog> {
           child: Stack(
             children: <Widget>[
               ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 500),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                spacing: 8,
-                children: <Widget>[
-                  Container(
-                    decoration: BoxDecoration(
-                      borderRadius: const BorderRadius.only(topLeft: Radius.circular(4), topRight: Radius.circular(4)),
-                      color: Theme.of(context).colorScheme.primaryContainer,
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: <Widget>[
-                        Text('Add Contribution', style: Theme.of(context).textTheme.titleLarge),
-                        IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
-                      ],
-                    ),
-                  ),
-                  Flexible(
-                    child: SingleChildScrollView(
-                      child: Column(
-                        spacing: 8,
+                constraints: const BoxConstraints(maxWidth: 500),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: 8,
+                  children: <Widget>[
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: const BorderRadius.only(topLeft: Radius.circular(4), topRight: Radius.circular(4)),
+                        color: Theme.of(context).colorScheme.primaryContainer,
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: <Widget>[
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: TextField(
-                              controller: _nameController,
-                              decoration: const InputDecoration(labelText: 'Name'),
-                              style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color?.withValues(alpha: 0.5)),
-                              readOnly: true,
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: TextField(
-                              controller: _contributionAmountController,
-                              decoration: const InputDecoration(labelText: 'Contribution Amount'),
-                              readOnly: true,
-                              onSubmitted: (String _) {
-                                _contributionAmountController.text = _contributionAmountController.text.contains(',') || _contributionAmountController.text.isEmpty
-                                    ? _contributionAmountController.text
-                                    : numberFormatter.format(int.parse(_contributionAmountController.text));
-                                _dateTimePicker();
-                              },
-                              style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color?.withValues(alpha: 0.5)),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Row(
-                              children: <Widget>[
-                                Expanded(
-                                  child: TextField(
-                                    controller: _paymentDateTimeController,
-                                    decoration: const InputDecoration(labelText: 'DateTime'),
-                                    onSubmitted: (String _) {
-                                      _contributionAmountController.text = _contributionAmountController.text.contains(',') || _contributionAmountController.text.isEmpty
-                                          ? _contributionAmountController.text
-                                          : numberFormatter.format(int.parse(_contributionAmountController.text));
-                                      _addContribution();
-                                    },
-                                    readOnly: true,
-                                    style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color?.withValues(alpha: 0.5)),
-                                  ),
+                          RichText(
+                            text: TextSpan(
+                              style: Theme.of(context).textTheme.titleLarge,
+                              children: <InlineSpan>[
+                                const TextSpan(text: 'Add Contribution for:   '),
+                                TextSpan(
+                                  text: dateFormatter.format(_contributionDate),
+                                  style: const TextStyle(color: Colors.red),
                                 ),
-                                IconButton(focusNode: _paymentDateTimeControllerFocusNode, onPressed: _dateTimePicker, icon: const Icon(Icons.calendar_month)),
                               ],
                             ),
                           ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: <Widget>[
-                                Text('Upload Proof (Optional):', style: Theme.of(context).textTheme.titleMedium),
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: <Widget>[
-                                    ElevatedButton.icon(
-                                      style: ElevatedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4))),
-                                      onPressed: _pickProofImage,
-                                      icon: const Icon(Icons.upload),
-                                      label: const Text('Choose Image'),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    if (_proofImageName != null) Text(_proofImageName!, style: Theme.of(context).textTheme.titleMedium, overflow: TextOverflow.ellipsis),
-                                  ],
-                                ),
-                                if (_proofImageBytes != null)
-                                  Center(
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 32),
-                                      child: Image.memory(_proofImageBytes!, fit: BoxFit.contain),
+                          IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+                        ],
+                      ),
+                    ),
+                    Flexible(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          spacing: 8,
+                          children: <Widget>[
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: TextField(
+                                controller: _nameController,
+                                decoration: const InputDecoration(labelText: 'Name'),
+                                style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color?.withValues(alpha: 0.5)),
+                                readOnly: true,
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: TextField(
+                                controller: _contributionAmountController,
+                                decoration: const InputDecoration(labelText: 'Contribution Amount ()'),
+                                readOnly: true,
+                                onSubmitted: (String _) {
+                                  _contributionAmountController.text = _contributionAmountController.text.contains(',') || _contributionAmountController.text.isEmpty
+                                      ? _contributionAmountController.text
+                                      : numberFormatter.format(int.parse(_contributionAmountController.text));
+                                  _dateTimePicker();
+                                },
+                                style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color?.withValues(alpha: 0.5)),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: Row(
+                                children: <Widget>[
+                                  Expanded(
+                                    child: TextField(
+                                      controller: _paymentDateTimeController,
+                                      decoration: const InputDecoration(labelText: 'Payment DateTime'),
+                                      onSubmitted: (String _) {
+                                        _contributionAmountController.text = _contributionAmountController.text.contains(',') || _contributionAmountController.text.isEmpty
+                                            ? _contributionAmountController.text
+                                            : numberFormatter.format(int.parse(_contributionAmountController.text));
+                                        _addContribution();
+                                      },
+                                      readOnly: true,
+                                      style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color?.withValues(alpha: 0.5)),
                                     ),
                                   ),
-                              ],
+                                  IconButton(focusNode: _paymentDateTimeControllerFocusNode, onPressed: _dateTimePicker, icon: const Icon(Icons.calendar_month)),
+                                ],
+                              ),
                             ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: <Widget>[
+                                  Text('Upload Proof (Optional):', style: Theme.of(context).textTheme.titleMedium),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: <Widget>[
+                                      ElevatedButton.icon(
+                                        style: ElevatedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4))),
+                                        onPressed: _pickProofImage,
+                                        icon: const Icon(Icons.upload),
+                                        label: const Text('Choose Image'),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      if (_proofImageName != null) Text(_proofImageName!, style: Theme.of(context).textTheme.titleMedium, overflow: TextOverflow.ellipsis),
+                                    ],
+                                  ),
+                                  if (_proofImageBytes != null)
+                                    Center(
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 32),
+                                        child: Image.memory(_proofImageBytes!, fit: BoxFit.contain),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(4), bottomRight: Radius.circular(4)),
+                        color: Theme.of(context).colorScheme.primaryContainer,
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          CustomIconButton(
+                            onPressed: _addContribution,
+                            label: 'Add Contribution',
+                            backgroundColor: Theme.of(context).colorScheme.onPrimary,
+                            borderRadius: 4,
+                            foregroundColor: Theme.of(context).textTheme.titleLarge?.color,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
                           ),
                         ],
                       ),
                     ),
-                  ),
-                  Container(
-                    decoration: BoxDecoration(
-                      borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(4), bottomRight: Radius.circular(4)),
-                      color: Theme.of(context).colorScheme.primaryContainer,
-                    ),
-                    padding: const EdgeInsets.all(12),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        CustomIconButton(
-                          onPressed: _addContribution,
-                          label: 'Add Contribution',
-                          backgroundColor: Theme.of(context).colorScheme.onPrimary,
-                          borderRadius: 4,
-                          foregroundColor: Theme.of(context).textTheme.titleLarge?.color,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
               if (_isLoading)
                 Positioned.fill(
                   child: Container(

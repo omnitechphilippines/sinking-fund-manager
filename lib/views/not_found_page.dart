@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../components/custom_app_bar.dart';
-import '../../components/footer.dart';
-import '../../components/side_nav.dart';
+import '../components/custom_app_bar.dart';
+import '../components/footer.dart';
+import '../components/side_nav.dart';
 
 class NotFoundPage extends StatelessWidget {
   const NotFoundPage({super.key});

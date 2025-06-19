@@ -19,11 +19,15 @@ class Footer extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: RichText(
               text: TextSpan(
-                style: const TextStyle(color: Colors.black, fontSize: 14),
+                style: Theme.of(context).textTheme.titleSmall,
                 children: <InlineSpan>[
-                  TextSpan(text: '© 2025 ', style: Theme.of(context).textTheme.titleSmall),
-                  TextSpan(text: 'Omni Tech Philippines', style: const TextStyle(color: Colors.blue), recognizer: TapGestureRecognizer()..onTap = () => launchUrl(Uri.parse('https://omnitechphilippines.dev'))),
-                  TextSpan(text: '. All rights reserved.', style: Theme.of(context).textTheme.titleSmall),
+                  const TextSpan(text: '© 2025 '),
+                  TextSpan(
+                    text: 'Omni Tech Philippines',
+                    style: const TextStyle(color: Colors.blue),
+                    recognizer: TapGestureRecognizer()..onTap = () => launchUrl(Uri.parse('https://omnitechphilippines.dev')),
+                  ),
+                  const TextSpan(text: '. All rights reserved.'),
                 ],
               ),
             ),

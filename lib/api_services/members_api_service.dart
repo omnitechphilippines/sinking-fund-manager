@@ -1,24 +1,24 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-import '../models/member.dart';
+import '../models/member_model.dart';
 
 class MembersApiService {
-  static const String baseUrl = 'http://localhost:1880/members';
+  static const String baseUrl = 'http://localhost:1880/api/v1/members';
 
   /// Get all members
-  Future<List<Member>> getMembers() async {
+  Future<List<MemberModel>> getMembers() async {
     final http.Response response = await http.get(Uri.parse(baseUrl));
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body);
-      return data.map((dynamic json) => Member.fromJson(json)).toList();
+      return data.map((dynamic json) => MemberModel.fromJson(json)).toList();
     } else {
-      throw Exception('Members API failed: ${response.body}');
+      throw Exception('Get Members API failed: ${response.body}');
     }
   }
 
   /// Add a new member
-  Future<String> addMember(Member member) async {
+  Future<String> addMember(MemberModel member) async {
     final http.Response response = await http.post(
       Uri.parse(baseUrl),
       headers: <String, String>{'Content-Type': 'application/json'},
@@ -33,11 +33,11 @@ class MembersApiService {
   }
 
   /// Get member by ID
-  Future<Member> getMemberById(String id) async {
+  Future<MemberModel> getMemberById(String id) async {
     final http.Response response = await http.get(Uri.parse('$baseUrl/$id'));
 
     if (response.statusCode == 200) {
-      return Member.fromJson(jsonDecode(response.body).first);
+      return MemberModel.fromJson(jsonDecode(response.body).first);
     } else {
       throw Exception('Get Member by ID failed: ${response.body}');
     }

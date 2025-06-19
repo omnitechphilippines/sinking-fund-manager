@@ -2,16 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sinking_fund_manager/components/member_dialog.dart';
 
-import '../../../components/confirm_dialog.dart';
-import '../../../components/contribution_dialog.dart';
-import '../controllers/contribution_controller.dart';
+import '../components/confirm_dialog.dart';
+import '../components/contribution_dialog.dart';
 import '../controllers/member_controller.dart';
-import '../controllers/members_api_service.dart';
-import '../models/contribution.dart';
-import '../models/member.dart';
+import '../api_services/members_api_service.dart';
+import '../controllers/setting_controller.dart';
+import '../models/member_model.dart';
+import '../models/setting_model.dart';
+import '../utils/formatters.dart';
+import '../controllers/contribution_controller.dart';
+import '../models/contribution_model.dart';
 
 class MemberItem extends ConsumerStatefulWidget {
-  final Member member;
+  final MemberModel member;
 
   const MemberItem({super.key, required this.member});
 
@@ -24,6 +27,7 @@ class _MemberItemState extends ConsumerState<MemberItem> {
 
   @override
   Widget build(BuildContext context) {
+    final SettingModel? setting = ref.watch(settingControllerProvider);
     return _isLoading
         ? const Center(child: CircularProgressIndicator())
         : Card(
@@ -45,34 +49,35 @@ class _MemberItemState extends ConsumerState<MemberItem> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Text(widget.member.name, style: Theme.of(context).textTheme.titleLarge),
-                        Text('₱ ${widget.member.formattedNumber} (${widget.member.numberOfHeads})', style: Theme.of(context).textTheme.titleMedium),
+                        Text('₱ ${widget.member.formattedContributionAmount} (${widget.member.numberOfHeads})', style: Theme.of(context).textTheme.titleMedium),
                       ],
                     ),
                     Row(
                       spacing: 4,
                       children: <Widget>[
                         IconButton(
-                          onPressed: () async {
+                          onPressed: setting != null ? () async {
                             final List<dynamic>? result = await showDialog(
                               barrierDismissible: false,
                               context: context,
                               builder: (BuildContext _) => ContributionDialog(name: widget.member.name, contributionAmount: widget.member.contributionAmount),
                             );
                             if (result != null && result.isNotEmpty) {
-                              final Contribution newContribution = result.first;
+                              final ContributionModel newContribution = result.first;
                               ref.read(contributionControllerProvider.notifier).addContribution(newContribution);
                               if (context.mounted) {
+                                final String dateTime = dateTimeFormatter.format(newContribution.paymentDateTime);
                                 ScaffoldMessenger.of(context).hideCurrentSnackBar();
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     backgroundColor: Colors.green,
-                                    content: Text('Contribution for member "${newContribution.name}" on ${newContribution.paymentDateTime} was successfully added!', style: const TextStyle(color: Colors.white)),
+                                    content: Text('Contribution for member "${newContribution.name}" on $dateTime was successfully added!', style: const TextStyle(color: Colors.white)),
                                   ),
                                 );
                               }
                             }
-                          },
-                          icon: const Icon(Icons.add_circle_sharp),
+                          } : null,
+                          icon: Icon(Icons.add_circle_sharp, color: setting != null ? null : Colors.grey.shade600,),
                         ),
                         IconButton(
                           onPressed: () async {

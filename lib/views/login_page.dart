@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
-import '../../../widgets/buttons/custom_button.dart';
-import '../../../widgets/text_fields/custom_text_field.dart';
+import '../widgets/buttons/custom_button.dart';
+import '../widgets/text_fields/custom_text_field.dart';
 import '../controllers/auth_controller.dart';
 import '../models/auth_model.dart';
 

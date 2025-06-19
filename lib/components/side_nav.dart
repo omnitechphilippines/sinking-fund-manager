@@ -21,7 +21,6 @@ class SideNav extends StatelessWidget {
           HoverListTile(icon: Icons.money, title: 'Contribution Tracking', route: '/contribution-tracking', currentRoute: currentRoute),
           HoverListTile(icon: Icons.handshake, title: 'Loan Management', route: '/loan-management', currentRoute: currentRoute),
           HoverListTile(icon: Icons.edit_document, title: 'Reports', route: '/reports', currentRoute: currentRoute),
-          HoverListTile(icon: Icons.settings, title: 'Settings', route: '/settings', currentRoute: currentRoute),
         ],
       ),
     );

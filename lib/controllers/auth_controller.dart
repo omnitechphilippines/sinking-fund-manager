@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
-import 'auth_api_service.dart';
+import '../api_services/auth_api_service.dart';
 import '../models/auth_model.dart';
 
 class AuthController extends Notifier<AuthModel> {

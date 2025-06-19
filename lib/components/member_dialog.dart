@@ -241,7 +241,7 @@ class _MemberDialogState extends ConsumerState<MemberDialog> {
                                                     ),
                                                   );
                                                 },
-                                                child: Image.memory(contribution.proof!, fit: BoxFit.contain),
+                                                child: Image.memory(contribution.proof!),
                                               )
                                             : null,
                                       ),

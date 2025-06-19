@@ -2,12 +2,14 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:sinking_fund_manager/controllers/setting_controller.dart';
 import 'package:uuid/uuid.dart';
 
 import '../api_services/contributions_api_service.dart';
 import '../controllers/contribution_controller.dart';
 import '../models/contribution_model.dart';
+import '../utils/currency_formatter.dart';
 import '../utils/formatters.dart';
 import '../widgets/buttons/custom_icon_button.dart';
 
@@ -30,7 +32,9 @@ class _ContributionDialogState extends ConsumerState<ContributionDialog> {
   Uint8List? _proofImageBytes;
   String? _proofImageName;
   late DateTime _contributionDate;
-  String _hintText='';
+  String _hintText = '';
+  double _maximumAmountToBePaid = 0;
+  bool _isError = false;
 
   @override
   void initState() {
@@ -49,14 +53,18 @@ class _ContributionDialogState extends ConsumerState<ContributionDialog> {
       final double totalContributionByDate = contributionsByNameAndDate.fold<double>(0.0, (double sum, ContributionModel contribution) => sum + contribution.contributionAmount);
       if (totalContributionByDate == widget.contributionAmount) {
         _contributionDate = is15 ? DateTime(_contributionDate.year, _contributionDate.month, lastDayOfMonth) : DateTime(_contributionDate.year, _contributionDate.month + 1, 15);
-        _hintText='not yet paid';
-      }
-      else{
-        _hintText='partially paid ₱ ${numberFormatter.format(totalContributionByDate)}';
+        _hintText = 'not yet paid';
+        _maximumAmountToBePaid = totalContributionByDate;
+      } else {
+        _hintText = 'partially paid ₱ ${numberFormatter.format(totalContributionByDate)}';
+        _maximumAmountToBePaid = widget.contributionAmount - totalContributionByDate;
       }
     } else {
       _contributionDate = ref.read(settingControllerProvider)!.startingDate;
+      _hintText = 'not yet paid';
+      _maximumAmountToBePaid = widget.contributionAmount;
     }
+    setState(() {});
   }
 
   @override
@@ -80,8 +88,16 @@ class _ContributionDialogState extends ConsumerState<ContributionDialog> {
   }
 
   void _addContribution() async {
+    if (_contributionAmountController.text.isEmpty) {
+      setState(() => _isError = true);
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill out all fields')));
+      _contributionAmountControllerFocusNode.requestFocus();
+      return;
+    }
+    _isError = false;
     setState(() => _isLoading = true);
     try {
+      appendDecimal(_contributionAmountController);
       final String id = const Uuid().v4();
       final bool response = await ContributionsApiService().addContribution(
         ContributionModel(
@@ -140,6 +156,7 @@ class _ContributionDialogState extends ConsumerState<ContributionDialog> {
         _paymentDateTimeController.text = dateTimeFormatter.format(fullDateTime);
       }
     }
+    appendDecimal(_contributionAmountController);
   }
 
   @override
@@ -201,6 +218,7 @@ class _ContributionDialogState extends ConsumerState<ContributionDialog> {
                                 decoration: const InputDecoration(labelText: 'Name'),
                                 style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color?.withValues(alpha: 0.5)),
                                 readOnly: true,
+                                onTap: () => appendDecimal(_contributionAmountController),
                               ),
                             ),
                             Padding(
@@ -208,18 +226,21 @@ class _ContributionDialogState extends ConsumerState<ContributionDialog> {
                               child: TextField(
                                 controller: _contributionAmountController,
                                 keyboardType: TextInputType.number,
-                                inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
+                                inputFormatters: <TextInputFormatter>[
+                                  FilteringTextInputFormatter.digitsOnly,
+                                  TextInputFormatter.withFunction((TextEditingValue oldValue, TextEditingValue newValue) => (int.tryParse(newValue.text) ?? 0) <= _maximumAmountToBePaid ? newValue : oldValue),
+                                  CurrencyFormatter(),
+                                ],
                                 decoration: InputDecoration(
                                   prefixText: '₱ ',
                                   prefixStyle: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color),
                                   labelText: 'Contribution Amount (₱ ${numberFormatter.format(widget.contributionAmount)})',
                                   hintText: _hintText,
                                   hintStyle: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color?.withValues(alpha: 0.5)),
+                                  errorText: _isError && _contributionAmountController.text.isEmpty ? 'Required' : null,
                                 ),
                                 onSubmitted: (String _) {
-                                  _contributionAmountController.text = _contributionAmountController.text.contains(',') || _contributionAmountController.text.isEmpty
-                                      ? _contributionAmountController.text
-                                      : numberFormatter.format(int.parse(_contributionAmountController.text));
+                                  appendDecimal(_contributionAmountController);
                                   _dateTimePicker();
                                 },
                                 focusNode: _contributionAmountControllerFocusNode,
@@ -235,16 +256,21 @@ class _ContributionDialogState extends ConsumerState<ContributionDialog> {
                                       controller: _paymentDateTimeController,
                                       decoration: const InputDecoration(labelText: 'Payment DateTime'),
                                       onSubmitted: (String _) {
-                                        _contributionAmountController.text = _contributionAmountController.text.contains(',') || _contributionAmountController.text.isEmpty
-                                            ? _contributionAmountController.text
-                                            : numberFormatter.format(int.parse(_contributionAmountController.text));
+                                        appendDecimal(_contributionAmountController);
                                         _addContribution();
                                       },
                                       readOnly: true,
                                       style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color?.withValues(alpha: 0.5)),
+                                      onTap: () => appendDecimal(_contributionAmountController),
                                     ),
                                   ),
-                                  IconButton(onPressed: _dateTimePicker, icon: const Icon(Icons.calendar_month)),
+                                  IconButton(
+                                    onPressed: () {
+                                      _dateTimePicker();
+                                      appendDecimal(_contributionAmountController);
+                                    },
+                                    icon: const Icon(Icons.calendar_month),
+                                  ),
                                 ],
                               ),
                             ),
@@ -259,7 +285,10 @@ class _ContributionDialogState extends ConsumerState<ContributionDialog> {
                                     children: <Widget>[
                                       ElevatedButton.icon(
                                         style: ElevatedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4))),
-                                        onPressed: _pickProofImage,
+                                        onPressed: () {
+                                          _pickProofImage();
+                                          appendDecimal(_contributionAmountController);
+                                        },
                                         icon: const Icon(Icons.upload),
                                         label: const Text('Choose Image'),
                                       ),
@@ -271,7 +300,15 @@ class _ContributionDialogState extends ConsumerState<ContributionDialog> {
                                     Center(
                                       child: Padding(
                                         padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 32),
-                                        child: Image.memory(_proofImageBytes!, fit: BoxFit.contain),
+                                        child: InkWell(
+                                          onTap: () {
+                                            showDialog(
+                                              context: context,
+                                              builder: (BuildContext context) => Dialog(child: InteractiveViewer(child: Image.memory(_proofImageBytes!))),
+                                            );
+                                          },
+                                          child: Image.memory(_proofImageBytes!),
+                                        ),
                                       ),
                                     ),
                                 ],

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sinking_fund_manager/api_services/settings_api_service.dart';
 
 import '../controllers/setting_controller.dart';
+import '../utils/currency_formatter.dart';
 import '../utils/formatters.dart';
 import '../widgets/buttons/custom_icon_button.dart';
 import '../models/setting_model.dart';
@@ -94,8 +95,6 @@ class _SettingDialogState extends ConsumerState<SettingDialog> {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill out all fields!')));
       if (_amountPerHeadController.text.isEmpty) {
         _amountPerHeadControllerFocusNode.requestFocus();
-      } else {
-        _amountPerHeadController.text = numberFormatter.format(int.parse(_amountPerHeadController.text));
       }
       return;
     }
@@ -187,7 +186,7 @@ class _SettingDialogState extends ConsumerState<SettingDialog> {
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: TextField(
                         keyboardType: TextInputType.number,
-                        inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
+                        inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly, CurrencyFormatter()],
                         controller: _amountPerHeadController,
                         focusNode: _amountPerHeadControllerFocusNode,
                         decoration: InputDecoration(
@@ -217,7 +216,10 @@ class _SettingDialogState extends ConsumerState<SettingDialog> {
                                   FocusScope.of(context).requestFocus(FocusNode());
                                 }
                               },
-                              onTap: () => FocusScope.of(context).requestFocus(FocusNode()),
+                              onTap: () {
+                                FocusScope.of(context).requestFocus(FocusNode());
+                                appendDecimal(_amountPerHeadController);
+                              },
                               items: ContributionPeriod.values.map((ContributionPeriod type) {
                                 final String label = switch (type) {
                                   ContributionPeriod.quincena => 'Quincena',
@@ -254,11 +256,12 @@ class _SettingDialogState extends ConsumerState<SettingDialog> {
                               ),
                               readOnly: true,
                               style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color?.withValues(alpha: 0.5)),
+                              onTap: () => appendDecimal(_amountPerHeadController),
                             ),
                           ),
                           IconButton(
                             onPressed: () {
-                              _amountPerHeadController.text = _amountPerHeadController.text.isNotEmpty && !_amountPerHeadController.text.contains('.') ? numberFormatter.format(int.parse(_amountPerHeadController.text)) : _amountPerHeadController.text;
+                              appendDecimal(_amountPerHeadController);
                               _datePicker();
                             },
                             icon: const Icon(Icons.calendar_month),

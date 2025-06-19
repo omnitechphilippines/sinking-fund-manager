@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,7 +8,6 @@ import '../../../../components/side_nav.dart';
 import '../../../../components/custom_app_bar.dart';
 import '../../../components/confirm_dialog.dart';
 import '../../../components/member_dialog.dart';
-import '../api_services/contributions_api_service.dart';
 import '../controllers/contribution_controller.dart';
 import '../controllers/member_controller.dart';
 import '../api_services/members_api_service.dart';
@@ -32,7 +29,6 @@ class _MemberManagementPageState extends ConsumerState<MemberManagementPage> {
   MemberSortType _selectedSortType = MemberSortType.name;
   SortDirection _selectedSortDirection = SortDirection.ascending;
   late final ScrollController _scrollController;
-  Uint8List? _proofImageBytes;
 
   @override
   void initState() {
@@ -42,8 +38,6 @@ class _MemberManagementPageState extends ConsumerState<MemberManagementPage> {
       try {
         await ref.read(memberControllerProvider.notifier).init();
         ref.read(memberControllerProvider.notifier).setSort(_selectedSortType, _selectedSortDirection);
-        // final ContributionModel contribution = await ContributionsApiService().getContributionById('80ab78bd-b041-44e6-b1a2-c8bc7b8bd507');
-        // _proofImageBytes = contribution.proof;
         await ref.read(settingControllerProvider.notifier).init();
         if (ref.read(settingControllerProvider) == null && mounted) {
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -101,7 +95,6 @@ class _MemberManagementPageState extends ConsumerState<MemberManagementPage> {
     final List<MemberModel> members = ref.watch(memberControllerProvider);
     final List<ContributionModel> contributions = ref.watch(contributionControllerProvider);
     final double totalContributions = contributions.fold(0.0, (double sum, ContributionModel contribution)=>sum+contribution.contributionAmount);
-    // final List<ContributionModel> contributions = ref.watch(contributionControllerProvider);
     final SettingModel? setting = ref.watch(settingControllerProvider);
     return Scaffold(
       floatingActionButton: FloatingActionButton(

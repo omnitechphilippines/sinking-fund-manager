@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive_flutter/adapters.dart';
-import 'package:sinking_fund_manager/controllers/setting_controller.dart';
 
 import '../controllers/auth_controller.dart';
 import '../models/auth_model.dart';

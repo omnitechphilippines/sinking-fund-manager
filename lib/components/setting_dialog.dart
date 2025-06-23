@@ -21,6 +21,7 @@ class _SettingDialogState extends ConsumerState<SettingDialog> {
   final TextEditingController _amountPerHeadController = TextEditingController();
   final TextEditingController _startingDateController = TextEditingController();
   final FocusNode _amountPerHeadControllerFocusNode = FocusNode();
+  final FocusNode _escapeKeyFocusNode = FocusNode();
   ContributionPeriod? _selectedContributionPeriodType;
   bool _isError = false;
 
@@ -44,6 +45,7 @@ class _SettingDialogState extends ConsumerState<SettingDialog> {
     _amountPerHeadController.dispose();
     _startingDateController.dispose();
     _amountPerHeadControllerFocusNode.dispose();
+    _escapeKeyFocusNode.dispose();
     super.dispose();
   }
 
@@ -108,7 +110,7 @@ class _SettingDialogState extends ConsumerState<SettingDialog> {
     try {
       final SettingModel newSetting = SettingModel(
         id: 1,
-        amountPerHead: double.parse(_amountPerHeadController.text.replaceAll(',', '')),
+        amountPerHead: numberFormatter.parse(_amountPerHeadController.text).toDouble(),
         contributionPeriod: _selectedContributionPeriodType!,
         startingDate: dateFormatter.parse(_startingDateController.text),
         createdAt: DateTime.now(),
@@ -147,161 +149,157 @@ class _SettingDialogState extends ConsumerState<SettingDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return KeyboardListener(
+    return Focus(
+      focusNode: _escapeKeyFocusNode,
       autofocus: true,
-      focusNode: FocusNode(),
-      onKeyEvent: (KeyEvent event) {
+      onKeyEvent: (FocusNode node, KeyEvent event) {
         if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
           Navigator.of(context).pop();
+          return KeyEventResult.handled;
         }
+        return KeyEventResult.ignored;
       },
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-          child: Stack(
-            children: <Widget>[
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 500),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  spacing: 8,
-                  children: <Widget>[
-                    Container(
-                      decoration: BoxDecoration(
-                        borderRadius: const BorderRadius.only(topLeft: Radius.circular(4), topRight: Radius.circular(4)),
-                        color: Theme.of(context).colorScheme.primaryContainer,
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: <Widget>[
-                          Text('Settings', style: Theme.of(context).textTheme.titleLarge),
-                          IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
-                        ],
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: TextField(
-                        keyboardType: TextInputType.number,
-                        inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly, CurrencyFormatter()],
-                        controller: _amountPerHeadController,
-                        focusNode: _amountPerHeadControllerFocusNode,
-                        decoration: InputDecoration(
-                          labelText: 'Amount Per Head',
-                          prefixText: '₱ ',
-                          labelStyle: TextStyle(fontWeight: FontWeight.normal, color: Theme.of(context).textTheme.titleLarge?.color),
-                          errorText: _isError && _amountPerHeadController.text.isEmpty ? 'Required' : null,
+      child: GestureDetector(
+        onTap: () {
+          if (!_escapeKeyFocusNode.hasFocus) {
+            _escapeKeyFocusNode.requestFocus();
+          }
+        },
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: Dialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+            child: Stack(
+              children: <Widget>[
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 500),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    spacing: 8,
+                    children: <Widget>[
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: const BorderRadius.only(topLeft: Radius.circular(4), topRight: Radius.circular(4)),
+                          color: Theme.of(context).colorScheme.primaryContainer,
                         ),
-                        style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: <Widget>[
+                            Text('Settings', style: Theme.of(context).textTheme.titleLarge),
+                            IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+                          ],
+                        ),
                       ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Row(
-                        children: <Widget>[
-                          Text(
-                            'Contribution Period: ',
-                            style: TextStyle(color: Theme.of(context).textTheme.titleLarge?.color, fontWeight: FontWeight.normal, fontSize: Theme.of(context).textTheme.titleLarge?.fontSize),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: TextField(
+                          keyboardType: TextInputType.number,
+                          inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly, CurrencyFormatter()],
+                          controller: _amountPerHeadController,
+                          focusNode: _amountPerHeadControllerFocusNode,
+                          decoration: InputDecoration(
+                            labelText: 'Amount Per Head',
+                            prefixText: ' ₱ ',
+                            prefixStyle: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color, fontSize: Theme.of(context).textTheme.titleLarge?.fontSize),
+                            errorText: _isError && _amountPerHeadController.text.isEmpty ? 'Required' : null,
                           ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: DropdownButton<ContributionPeriod>(
-                              value: _selectedContributionPeriodType,
-                              onChanged: (ContributionPeriod? contributionPeriodType) {
-                                if (contributionPeriodType != null) {
-                                  setState(() => _selectedContributionPeriodType = contributionPeriodType);
-                                  FocusScope.of(context).requestFocus(FocusNode());
-                                }
-                              },
-                              onTap: () {
-                                FocusScope.of(context).requestFocus(FocusNode());
+                          style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: DropdownButtonFormField<ContributionPeriod>(
+                          style: TextStyle(fontSize: Theme.of(context).textTheme.titleLarge?.fontSize, color: Theme.of(context).textTheme.titleLarge?.color),
+                          value: _selectedContributionPeriodType,
+                          decoration: InputDecoration(
+                            labelText: 'Contribution Period',
+                            labelStyle: TextStyle(fontWeight: FontWeight.normal, color: Theme.of(context).textTheme.titleLarge?.color),
+                          ),
+                          onChanged: (ContributionPeriod? contributionPeriodType) {
+                            if (contributionPeriodType != null) {
+                              setState(() => _selectedContributionPeriodType = contributionPeriodType);
+                              FocusScope.of(context).requestFocus(FocusNode());
+                            }
+                          },
+                          onTap: () {
+                            FocusScope.of(context).requestFocus(FocusNode());
+                            appendDecimal(_amountPerHeadController);
+                          },
+                          items: ContributionPeriod.values.map((ContributionPeriod type) {
+                            final String label = switch (type) {
+                              ContributionPeriod.quincena => 'Quincena',
+                              ContributionPeriod.monthly => 'Monthly',
+                            };
+                            return DropdownMenuItem<ContributionPeriod>(
+                              value: type,
+                              child: Padding(padding: const EdgeInsets.symmetric(horizontal: 4.0), child: Text(label)),
+                            );
+                          }).toList(),
+                          icon: const Padding(padding: EdgeInsets.only(right: 4.0), child: Icon(Icons.arrow_drop_down)),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: TextField(
+                          controller: _startingDateController,
+                          decoration: InputDecoration(
+                            labelText: 'Starting Date',
+                            prefix: const SizedBox(width: 4),
+                            labelStyle: TextStyle(fontWeight: FontWeight.normal, color: Theme.of(context).textTheme.titleLarge?.color),
+                            errorText: _isError && _startingDateController.text.isEmpty
+                                ? 'Required'
+                                : _isError
+                                ? 'Invalid'
+                                : null,
+                            suffixIcon: IconButton(
+                              onPressed: () {
                                 appendDecimal(_amountPerHeadController);
+                                _datePicker();
                               },
-                              items: ContributionPeriod.values.map((ContributionPeriod type) {
-                                final String label = switch (type) {
-                                  ContributionPeriod.quincena => 'Quincena',
-                                  ContributionPeriod.monthly => 'Monthly',
-                                };
-                                return DropdownMenuItem<ContributionPeriod>(
-                                  value: type,
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                                    child: Text(label, style: TextStyle(fontSize: Theme.of(context).textTheme.titleLarge?.fontSize)),
-                                  ),
-                                );
-                              }).toList(),
+                              icon: const Icon(Icons.calendar_month),
                             ),
                           ),
-                        ],
+                          readOnly: true,
+                          style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color?.withValues(alpha: 0.5)),
+                          onTap: () => appendDecimal(_amountPerHeadController),
+                        ),
                       ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Row(
-                        children: <Widget>[
-                          Expanded(
-                            child: TextField(
-                              controller: _startingDateController,
-                              decoration: InputDecoration(
-                                labelText: 'Starting Date',
-                                labelStyle: TextStyle(fontWeight: FontWeight.normal, color: Theme.of(context).textTheme.titleLarge?.color),
-                                errorText: _isError && _startingDateController.text.isEmpty
-                                    ? 'Required'
-                                    : _isError
-                                    ? 'Invalid'
-                                    : null,
-                              ),
-                              readOnly: true,
-                              style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color?.withValues(alpha: 0.5)),
-                              onTap: () => appendDecimal(_amountPerHeadController),
+                      const SizedBox(height: 8),
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(4), bottomRight: Radius.circular(4)),
+                          color: Theme.of(context).colorScheme.primaryContainer,
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: <Widget>[
+                            CustomIconButton(
+                              onPressed: () => _saveSettings(),
+                              label: 'Save Settings',
+                              backgroundColor: Theme.of(context).colorScheme.onPrimary,
+                              borderRadius: 4,
+                              foregroundColor: Theme.of(context).textTheme.titleLarge?.color,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
                             ),
-                          ),
-                          IconButton(
-                            onPressed: () {
-                              appendDecimal(_amountPerHeadController);
-                              _datePicker();
-                            },
-                            icon: const Icon(Icons.calendar_month),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    Container(
-                      decoration: BoxDecoration(
-                        borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(4), bottomRight: Radius.circular(4)),
-                        color: Theme.of(context).colorScheme.primaryContainer,
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: <Widget>[
-                          CustomIconButton(
-                            onPressed: () => _saveSettings(),
-                            label: 'Save Settings',
-                            backgroundColor: Theme.of(context).colorScheme.onPrimary,
-                            borderRadius: 4,
-                            foregroundColor: Theme.of(context).textTheme.titleLarge?.color,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (_isLoading)
-                Positioned.fill(
-                  child: Container(
-                    color: Colors.black.withValues(alpha: 0.4),
-                    child: const Center(child: CircularProgressIndicator()),
+                    ],
                   ),
                 ),
-            ],
+                if (_isLoading)
+                  Positioned.fill(
+                    child: Container(
+                      color: Colors.black.withValues(alpha: 0.4),
+                      child: const Center(child: CircularProgressIndicator()),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),

@@ -90,6 +90,127 @@ class _MemberManagementPageState extends ConsumerState<MemberManagementPage> {
     }
   }
 
+  Widget _buildLargeScreenHeader() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: <Widget>[
+        Text('Members List', style: Theme.of(context).textTheme.titleLarge),
+        Row(
+          children: <Widget>[
+            Text('Sort by: ', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(width: 8),
+            DropdownButton<MemberSortType>(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              value: _selectedSortType,
+              onChanged: (MemberSortType? sortType) {
+                if (sortType != null) {
+                  setState(() => _selectedSortType = sortType);
+                  ref.read(memberControllerProvider.notifier).setSort(_selectedSortType, _selectedSortDirection);
+                  FocusScope.of(context).requestFocus(FocusNode());
+                }
+              },
+              onTap: () => FocusScope.of(context).requestFocus(FocusNode()),
+              items: MemberSortType.values.map((MemberSortType type) {
+                final String label = switch (type) {
+                  MemberSortType.name => 'Name',
+                  MemberSortType.numberOfHeads => 'Number of Heads',
+                };
+                return DropdownMenuItem<MemberSortType>(value: type, child: Text(label));
+              }).toList(),
+            ),
+            const SizedBox(width: 16),
+            Text('Direction: ', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(width: 8),
+            DropdownButton<SortDirection>(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              value: _selectedSortDirection,
+              onChanged: (SortDirection? value) {
+                if (value != null) {
+                  setState(() => _selectedSortDirection = value);
+                  ref.read(memberControllerProvider.notifier).setSort(_selectedSortType, _selectedSortDirection);
+                  FocusScope.of(context).requestFocus(FocusNode());
+                }
+              },
+              onTap: () => FocusScope.of(context).requestFocus(FocusNode()),
+              items: SortDirection.values.map((SortDirection dir) {
+                final String label = switch (dir) {
+                  SortDirection.ascending => 'Ascending',
+                  SortDirection.descending => 'Descending',
+                };
+                return DropdownMenuItem<SortDirection>(value: dir, child: Text(label));
+              }).toList(),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSmallScreenHeader() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: <Widget>[
+            Text('Sort by: ', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(width: 8),
+            DropdownButton<MemberSortType>(
+              value: _selectedSortType,
+              onChanged: (MemberSortType? sortType) {
+                if (sortType != null) {
+                  setState(() => _selectedSortType = sortType);
+                  ref.read(memberControllerProvider.notifier).setSort(_selectedSortType, _selectedSortDirection);
+                  FocusScope.of(context).requestFocus(FocusNode());
+                }
+              },
+              onTap: () => FocusScope.of(context).requestFocus(FocusNode()),
+              items: MemberSortType.values.map((MemberSortType type) {
+                final String label = switch (type) {
+                  MemberSortType.name => 'Name',
+                  MemberSortType.numberOfHeads => 'Number of Heads',
+                };
+                return DropdownMenuItem<MemberSortType>(
+                  value: type,
+                  child: Padding(padding: const EdgeInsets.symmetric(horizontal: 4.0), child: Text(label)),
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: <Widget>[
+            Text('Direction: ', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(width: 8),
+            DropdownButton<SortDirection>(
+              value: _selectedSortDirection,
+              onChanged: (SortDirection? value) {
+                if (value != null) {
+                  setState(() => _selectedSortDirection = value);
+                  ref.read(memberControllerProvider.notifier).setSort(_selectedSortType, _selectedSortDirection);
+                  FocusScope.of(context).requestFocus(FocusNode());
+                }
+              },
+              onTap: () => FocusScope.of(context).requestFocus(FocusNode()),
+              items: SortDirection.values.map((SortDirection dir) {
+                final String label = switch (dir) {
+                  SortDirection.ascending => 'Ascending',
+                  SortDirection.descending => 'Descending',
+                };
+                return DropdownMenuItem<SortDirection>(
+                  value: dir,
+                  child: Padding(padding: const EdgeInsets.symmetric(horizontal: 4.0), child: Text(label)),
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+        Text('Members List', style: Theme.of(context).textTheme.titleLarge),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final List<MemberModel> members = ref.watch(memberControllerProvider);
@@ -107,7 +228,7 @@ class _MemberManagementPageState extends ConsumerState<MemberManagementPage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : members.isEmpty
-          ? Center(child: Text('No data found.', style: Theme.of(context).textTheme.titleLarge))
+          ? Center(child: Text('No members found.', style: Theme.of(context).textTheme.titleLarge))
           : LayoutBuilder(
               builder: (BuildContext _, BoxConstraints constraints) {
                 final bool isSmallScreen = constraints.maxWidth < 600;
@@ -193,129 +314,6 @@ class _MemberManagementPageState extends ConsumerState<MemberManagementPage> {
                 );
               },
             ),
-    );
-  }
-
-  Widget _buildLargeScreenHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: <Widget>[
-        Text('Members List', style: Theme.of(context).textTheme.titleLarge),
-        Row(
-          children: <Widget>[
-            Text('Sort by: ', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(width: 8),
-            DropdownButton<MemberSortType>(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              value: _selectedSortType,
-              onChanged: (MemberSortType? sortType) {
-                if (sortType != null) {
-                  setState(() => _selectedSortType = sortType);
-                  ref.read(memberControllerProvider.notifier).setSort(_selectedSortType, _selectedSortDirection);
-                  FocusScope.of(context).requestFocus(FocusNode());
-                }
-              },
-              onTap: () => FocusScope.of(context).requestFocus(FocusNode()),
-              items: MemberSortType.values.map((MemberSortType type) {
-                final String label = switch (type) {
-                  MemberSortType.name => 'Name',
-                  MemberSortType.contribution => 'Contribution',
-                  MemberSortType.numberOfHeads => 'Number of Heads',
-                };
-                return DropdownMenuItem<MemberSortType>(value: type, child: Text(label));
-              }).toList(),
-            ),
-            const SizedBox(width: 16),
-            Text('Direction: ', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(width: 8),
-            DropdownButton<SortDirection>(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              value: _selectedSortDirection,
-              onChanged: (SortDirection? value) {
-                if (value != null) {
-                  setState(() => _selectedSortDirection = value);
-                  ref.read(memberControllerProvider.notifier).setSort(_selectedSortType, _selectedSortDirection);
-                  FocusScope.of(context).requestFocus(FocusNode());
-                }
-              },
-              onTap: () => FocusScope.of(context).requestFocus(FocusNode()),
-              items: SortDirection.values.map((SortDirection dir) {
-                final String label = switch (dir) {
-                  SortDirection.ascending => 'Ascending',
-                  SortDirection.descending => 'Descending',
-                };
-                return DropdownMenuItem<SortDirection>(value: dir, child: Text(label));
-              }).toList(),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSmallScreenHeader() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: <Widget>[
-            Text('Sort by: ', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(width: 8),
-            DropdownButton<MemberSortType>(
-              value: _selectedSortType,
-              onChanged: (MemberSortType? sortType) {
-                if (sortType != null) {
-                  setState(() => _selectedSortType = sortType);
-                  ref.read(memberControllerProvider.notifier).setSort(_selectedSortType, _selectedSortDirection);
-                  FocusScope.of(context).requestFocus(FocusNode());
-                }
-              },
-              onTap: () => FocusScope.of(context).requestFocus(FocusNode()),
-              items: MemberSortType.values.map((MemberSortType type) {
-                final String label = switch (type) {
-                  MemberSortType.name => 'Name',
-                  MemberSortType.contribution => 'Contribution',
-                  MemberSortType.numberOfHeads => 'Number of Heads',
-                };
-                return DropdownMenuItem<MemberSortType>(
-                  value: type,
-                  child: Padding(padding: const EdgeInsets.symmetric(horizontal: 4.0), child: Text(label)),
-                );
-              }).toList(),
-            ),
-          ],
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: <Widget>[
-            Text('Direction: ', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(width: 8),
-            DropdownButton<SortDirection>(
-              value: _selectedSortDirection,
-              onChanged: (SortDirection? value) {
-                if (value != null) {
-                  setState(() => _selectedSortDirection = value);
-                  ref.read(memberControllerProvider.notifier).setSort(_selectedSortType, _selectedSortDirection);
-                  FocusScope.of(context).requestFocus(FocusNode());
-                }
-              },
-              onTap: () => FocusScope.of(context).requestFocus(FocusNode()),
-              items: SortDirection.values.map((SortDirection dir) {
-                final String label = switch (dir) {
-                  SortDirection.ascending => 'Ascending',
-                  SortDirection.descending => 'Descending',
-                };
-                return DropdownMenuItem<SortDirection>(
-                  value: dir,
-                  child: Padding(padding: const EdgeInsets.symmetric(horizontal: 4.0), child: Text(label)),
-                );
-              }).toList(),
-            ),
-          ],
-        ),
-        Text('Members List', style: Theme.of(context).textTheme.titleLarge),
-      ],
     );
   }
 }

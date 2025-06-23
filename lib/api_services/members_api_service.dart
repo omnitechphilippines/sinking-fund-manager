@@ -18,7 +18,7 @@ class MembersApiService {
   }
 
   /// Add a new member
-  Future<String> addMember(MemberModel member) async {
+  Future<bool> addMember(MemberModel member) async {
     final http.Response response = await http.post(
       Uri.parse(baseUrl),
       headers: <String, String>{'Content-Type': 'application/json'},
@@ -26,7 +26,7 @@ class MembersApiService {
     );
 
     if (response.statusCode == 201 || response.statusCode == 200) {
-      return jsonDecode(response.body)['affectedRows'] == 1 ? 'success' : 'failed';
+      return jsonDecode(response.body)['affectedRows'] == 1 ? true : false;
     } else {
       throw Exception('Add Member failed: ${response.body}');
     }
@@ -43,7 +43,7 @@ class MembersApiService {
     }
   }
 
-  /// Delete member by ID
+  /// Delete member by name
   Future<void> deleteMemberByName(String name) async {
     final http.Response response = await http.delete(Uri.parse('$baseUrl/$name'));
 

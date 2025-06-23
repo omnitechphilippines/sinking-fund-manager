@@ -16,13 +16,13 @@ class MemberModel {
       name: json['name'],
       numberOfHeads: int.parse(json['number_of_heads'].toString()),
       contributionAmount: double.parse(json['contribution_amount'].toString()),
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
+      createdAt: DateTime.parse(json['created_at']).toLocal(),
+      updatedAt: DateTime.parse(json['updated_at']).toLocal(),
     );
   }
 
   Map<String, dynamic> toJson() {
-    return <String, dynamic>{'id': id, 'name': name, 'number_of_heads': numberOfHeads, 'contribution_amount': contributionAmount, 'created_at': createdAt.toString(), 'updated_at': updatedAt.toString()};
+    return <String, dynamic>{'id': id, 'name': name, 'number_of_heads': numberOfHeads, 'contribution_amount': contributionAmount, 'created_at': createdAt.toIso8601String(), 'updated_at': updatedAt.toIso8601String()};
   }
 
   String get formattedContributionAmount => numberFormatter.format(contributionAmount);

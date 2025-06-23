@@ -1,28 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sinking_fund_manager/components/member_dialog.dart';
 
+import '../api_services/loans_api_service.dart';
 import '../components/confirm_dialog.dart';
-import '../components/contribution_dialog.dart';
-import '../controllers/member_controller.dart';
-import '../api_services/members_api_service.dart';
+import '../components/loan_dialog.dart';
+import '../controllers/loan_controller.dart';
 import '../controllers/setting_controller.dart';
-import '../models/member_model.dart';
+import '../models/loan_model.dart';
 import '../models/setting_model.dart';
 import '../utils/formatters.dart';
 import '../controllers/contribution_controller.dart';
 import '../models/contribution_model.dart';
 
-class MemberItem extends ConsumerStatefulWidget {
-  final MemberModel member;
+class LoanItem extends ConsumerStatefulWidget {
+  final LoanModel loan;
 
-  const MemberItem({super.key, required this.member});
+  const LoanItem({super.key, required this.loan});
 
   @override
-  ConsumerState<MemberItem> createState() => _MemberItemState();
+  ConsumerState<LoanItem> createState() => _LoanItemState();
 }
 
-class _MemberItemState extends ConsumerState<MemberItem> {
+class _LoanItemState extends ConsumerState<LoanItem> {
   bool _isLoading = false;
 
   @override
@@ -38,7 +37,7 @@ class _MemberItemState extends ConsumerState<MemberItem> {
               onTap: () async => await showDialog(
                 barrierDismissible: false,
                 context: context,
-                builder: (BuildContext _) => MemberDialog(member: widget.member),
+                builder: (BuildContext _) => LoanDialog(loan: widget.loan),
               ),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -48,20 +47,26 @@ class _MemberItemState extends ConsumerState<MemberItem> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        Text(widget.member.name, style: Theme.of(context).textTheme.titleLarge),
-                        Text('₱ ${widget.member.formattedContributionAmount} (${widget.member.numberOfHeads})', style: Theme.of(context).textTheme.titleMedium),
+                        Text(widget.loan.name, style: Theme.of(context).textTheme.titleLarge),
+                        Text('₱ ${numberFormatter.format(widget.loan.totalAmountToPay)} (${widget.loan.numberOfGives})', style: Theme.of(context).textTheme.titleMedium),
+                      ],
+                    ),
+                    Column(
+                      children: <Widget>[
+                        Text('Due: ${dateFormatter.format(widget.loan.paymentStartDate)}', style: Theme.of(context).textTheme.titleLarge),
+                        Text('Amount: ₱ ${numberFormatter.format(widget.loan.payablePerGive)}', style: Theme.of(context).textTheme.titleMedium),
                       ],
                     ),
                     Row(
                       spacing: 4,
                       children: <Widget>[
                         IconButton(
-                          tooltip: 'Add Contribution',
+                          tooltip: 'Pay Loan',
                           onPressed: setting != null ? () async {
                             final List<dynamic>? result = await showDialog(
                               barrierDismissible: false,
                               context: context,
-                              builder: (BuildContext _) => ContributionDialog(name: widget.member.name, contributionAmount: widget.member.contributionAmount),
+                              builder: (BuildContext _) => LoanDialog(loan: widget.loan),
                             );
                             if (result != null && result.isNotEmpty) {
                               final ContributionModel newContribution = result.first;
@@ -78,20 +83,20 @@ class _MemberItemState extends ConsumerState<MemberItem> {
                               }
                             }
                           } : null,
-                          icon: Icon(Icons.add_circle_sharp, color: setting != null ? null : Colors.grey.shade600,),
+                          icon: Icon(Icons.payments_outlined, color: setting != null ? null : Colors.grey.shade600,),
                         ),
                         IconButton(
-                          tooltip: 'Delete Member',
+                          tooltip: 'Delete Loan',
                           onPressed: () async {
-                            final bool shouldDelete = await showConfirmDialog(context: context, title: 'Confirm Deletion', message: 'Are you sure you want to delete "${widget.member.name}"?', confirmText: 'Delete', cancelText: 'Cancel');
+                            final bool shouldDelete = await showConfirmDialog(context: context, title: 'Confirm Deletion', message: 'Are you sure you want to delete loan of "${widget.loan.name}"?', confirmText: 'Delete', cancelText: 'Cancel');
                             setState(() => _isLoading = true);
                             try {
                               if (shouldDelete) {
-                                await MembersApiService().deleteMemberByName(widget.member.name);
+                                await LoansApiService().deleteLoanById(widget.loan.id);
                                 if (context.mounted) {
-                                  ref.read(memberControllerProvider.notifier).deleteMember(widget.member);
+                                  ref.read(loanControllerProvider.notifier).deleteLoan(widget.loan);
                                   ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Member "${widget.member.name}" was successfully deleted!'), duration: const Duration(seconds: 5)));
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Loan of "${widget.loan.name}" was successfully deleted!'), duration: const Duration(seconds: 5)));
                                 }
                               }
                             } catch (e) {

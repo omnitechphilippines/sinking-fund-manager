@@ -2,7 +2,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:sinking_fund_manager/controllers/setting_controller.dart';
 import 'package:uuid/uuid.dart';
 
@@ -25,10 +24,11 @@ class ContributionDialog extends ConsumerStatefulWidget {
 
 class _ContributionDialogState extends ConsumerState<ContributionDialog> {
   bool _isLoading = false;
-  late final TextEditingController _nameController = TextEditingController();
-  late final TextEditingController _contributionAmountController = TextEditingController();
-  late final TextEditingController _paymentDateTimeController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _contributionAmountController = TextEditingController();
+  final TextEditingController _paymentDateTimeController = TextEditingController();
   final FocusNode _contributionAmountControllerFocusNode = FocusNode();
+  final FocusNode _escapeKeyFocusNode = FocusNode();
   Uint8List? _proofImageBytes;
   String? _proofImageName;
   late DateTime _contributionDate;
@@ -73,6 +73,7 @@ class _ContributionDialogState extends ConsumerState<ContributionDialog> {
     _contributionAmountController.dispose();
     _paymentDateTimeController.dispose();
     _contributionAmountControllerFocusNode.dispose();
+    _escapeKeyFocusNode.dispose();
     super.dispose();
   }
 
@@ -104,7 +105,7 @@ class _ContributionDialogState extends ConsumerState<ContributionDialog> {
           id: id,
           name: widget.name,
           contributionDate: _contributionDate,
-          contributionAmount: double.parse(_contributionAmountController.text.replaceAll(',', '')),
+          contributionAmount: numberFormatter.parse(_contributionAmountController.text).toDouble(),
           paymentDateTime: dateTimeFormatter.parse(_paymentDateTimeController.text),
           proof: _proofImageBytes,
           createdAt: DateTime.now(),
@@ -161,195 +162,204 @@ class _ContributionDialogState extends ConsumerState<ContributionDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return KeyboardListener(
+    return Focus(
+      focusNode: _escapeKeyFocusNode,
       autofocus: true,
-      focusNode: FocusNode(),
-      onKeyEvent: (KeyEvent event) {
+      onKeyEvent: (FocusNode node, KeyEvent event) {
         if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
           Navigator.of(context).pop();
+          return KeyEventResult.handled;
         }
+        return KeyEventResult.ignored;
       },
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-          child: Stack(
-            children: <Widget>[
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 500),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  spacing: 8,
-                  children: <Widget>[
-                    Container(
-                      decoration: BoxDecoration(
-                        borderRadius: const BorderRadius.only(topLeft: Radius.circular(4), topRight: Radius.circular(4)),
-                        color: Theme.of(context).colorScheme.primaryContainer,
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: <Widget>[
-                          RichText(
-                            text: TextSpan(
-                              style: Theme.of(context).textTheme.titleLarge,
-                              children: <InlineSpan>[
-                                const TextSpan(text: 'Add Contribution for:   '),
-                                TextSpan(
-                                  text: dateFormatter.format(_contributionDate),
-                                  style: const TextStyle(color: Colors.red),
-                                ),
-                              ],
-                            ),
-                          ),
-                          IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
-                        ],
-                      ),
-                    ),
-                    Flexible(
-                      child: SingleChildScrollView(
-                        child: Column(
-                          spacing: 8,
+      child: GestureDetector(
+        onTap: () {
+          if (!_escapeKeyFocusNode.hasFocus) {
+            _escapeKeyFocusNode.requestFocus();
+          }
+        },
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: Dialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+            child: Stack(
+              children: <Widget>[
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 500),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    spacing: 8,
+                    children: <Widget>[
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: const BorderRadius.only(topLeft: Radius.circular(4), topRight: Radius.circular(4)),
+                          color: Theme.of(context).colorScheme.primaryContainer,
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: <Widget>[
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              child: TextField(
-                                controller: _nameController,
-                                decoration: const InputDecoration(labelText: 'Name'),
-                                style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color?.withValues(alpha: 0.5)),
-                                readOnly: true,
-                                onTap: () => appendDecimal(_contributionAmountController),
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              child: TextField(
-                                controller: _contributionAmountController,
-                                keyboardType: TextInputType.number,
-                                inputFormatters: <TextInputFormatter>[
-                                  FilteringTextInputFormatter.digitsOnly,
-                                  TextInputFormatter.withFunction((TextEditingValue oldValue, TextEditingValue newValue) => (int.tryParse(newValue.text) ?? 0) <= _maximumAmountToBePaid ? newValue : oldValue),
-                                  CurrencyFormatter(),
+                            RichText(
+                              text: TextSpan(
+                                style: Theme.of(context).textTheme.titleLarge,
+                                children: <InlineSpan>[
+                                  const TextSpan(text: 'Add Contribution for:   '),
+                                  TextSpan(
+                                    text: dateFormatter.format(_contributionDate),
+                                    style: const TextStyle(color: Colors.red),
+                                  ),
                                 ],
-                                decoration: InputDecoration(
-                                  prefixText: '₱ ',
-                                  prefixStyle: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color),
-                                  labelText: 'Contribution Amount (₱ ${numberFormatter.format(widget.contributionAmount)})',
-                                  hintText: _hintText,
-                                  hintStyle: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color?.withValues(alpha: 0.5)),
-                                  errorText: _isError && _contributionAmountController.text.isEmpty ? 'Required' : null,
-                                ),
-                                onSubmitted: (String _) {
-                                  appendDecimal(_contributionAmountController);
-                                  _dateTimePicker();
-                                },
-                                focusNode: _contributionAmountControllerFocusNode,
-                                style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color),
                               ),
                             ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              child: Row(
-                                children: <Widget>[
-                                  Expanded(
-                                    child: TextField(
-                                      controller: _paymentDateTimeController,
-                                      decoration: const InputDecoration(labelText: 'Payment DateTime'),
-                                      onSubmitted: (String _) {
+                            IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+                          ],
+                        ),
+                      ),
+                      Flexible(
+                        child: SingleChildScrollView(
+                          child: Column(
+                            spacing: 8,
+                            children: <Widget>[
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                child: TextField(
+                                  controller: _nameController,
+                                  decoration: const InputDecoration(labelText: 'Name', prefix: SizedBox(width: 4)),
+                                  style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color?.withValues(alpha: 0.5)),
+                                  readOnly: true,
+                                  onTap: () => appendDecimal(_contributionAmountController),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                child: TextField(
+                                  controller: _contributionAmountController,
+                                  keyboardType: TextInputType.number,
+                                  inputFormatters: <TextInputFormatter>[
+                                    FilteringTextInputFormatter.digitsOnly,
+                                    TextInputFormatter.withFunction((TextEditingValue oldValue, TextEditingValue newValue) => (int.tryParse(newValue.text) ?? 0) <= _maximumAmountToBePaid ? newValue : oldValue),
+                                    CurrencyFormatter(),
+                                  ],
+                                  decoration: InputDecoration(
+                                    prefixText: ' ₱ ',
+                                    prefixStyle: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color, fontSize: Theme.of(context).textTheme.titleLarge?.fontSize),
+                                    labelText: 'Contribution Amount (₱ ${numberFormatter.format(widget.contributionAmount)})',
+                                    hintText: _hintText,
+                                    hintStyle: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color?.withValues(alpha: 0.5)),
+                                    errorText: _isError && _contributionAmountController.text.isEmpty ? 'Required' : null,
+                                  ),
+                                  onSubmitted: (String _) {
+                                    appendDecimal(_contributionAmountController);
+                                    _dateTimePicker();
+                                  },
+                                  focusNode: _contributionAmountControllerFocusNode,
+                                  style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                child: TextField(
+                                  controller: _paymentDateTimeController,
+                                  decoration: InputDecoration(
+                                    prefix: const SizedBox(width: 4),
+                                    labelText: 'Payment Date Time',
+                                    suffixIcon: IconButton(
+                                      onPressed: () {
                                         appendDecimal(_contributionAmountController);
-                                        _addContribution();
+                                        _dateTimePicker();
                                       },
-                                      readOnly: true,
-                                      style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color?.withValues(alpha: 0.5)),
-                                      onTap: () => appendDecimal(_contributionAmountController),
+                                      icon: const Icon(Icons.calendar_month),
                                     ),
                                   ),
-                                  IconButton(
-                                    onPressed: () {
-                                      _dateTimePicker();
-                                      appendDecimal(_contributionAmountController);
-                                    },
-                                    icon: const Icon(Icons.calendar_month),
-                                  ),
-                                ],
+                                  onSubmitted: (String _) {
+                                    appendDecimal(_contributionAmountController);
+                                    _addContribution();
+                                  },
+                                  readOnly: true,
+                                  style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color?.withValues(alpha: 0.5)),
+                                  onTap: () => appendDecimal(_contributionAmountController),
+                                ),
                               ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: <Widget>[
-                                  Text('Upload Proof (Optional):', style: Theme.of(context).textTheme.titleMedium),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    children: <Widget>[
-                                      ElevatedButton.icon(
-                                        style: ElevatedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4))),
-                                        onPressed: () {
-                                          _pickProofImage();
-                                          appendDecimal(_contributionAmountController);
-                                        },
-                                        icon: const Icon(Icons.upload),
-                                        label: const Text('Choose Image'),
-                                      ),
-                                      const SizedBox(width: 16),
-                                      if (_proofImageName != null) Text(_proofImageName!, style: Theme.of(context).textTheme.titleMedium, overflow: TextOverflow.ellipsis),
-                                    ],
-                                  ),
-                                  if (_proofImageBytes != null)
-                                    Center(
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 32),
-                                        child: InkWell(
-                                          onTap: () {
-                                            showDialog(
-                                              context: context,
-                                              builder: (BuildContext context) => Dialog(child: InteractiveViewer(child: Image.memory(_proofImageBytes!))),
-                                            );
-                                          },
-                                          child: Image.memory(_proofImageBytes!),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: <Widget>[
+                                    Text('Upload Proof (Optional):', style: Theme.of(context).textTheme.titleMedium),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: <Widget>[
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                                          child: ElevatedButton.icon(
+                                            style: ElevatedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4))),
+                                            onPressed: () {
+                                              _pickProofImage();
+                                              appendDecimal(_contributionAmountController);
+                                            },
+                                            icon: const Icon(Icons.upload),
+                                            label: const Text('Choose Image'),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 16),
+                                        if (_proofImageName != null) Text(_proofImageName!, style: Theme.of(context).textTheme.titleMedium, overflow: TextOverflow.ellipsis),
+                                      ],
+                                    ),
+                                    if (_proofImageBytes != null)
+                                      Center(
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 32),
+                                          child: InkWell(
+                                            onTap: () {
+                                              showDialog(
+                                                context: context,
+                                                builder: (BuildContext context) => Dialog(child: InteractiveViewer(child: Image.memory(_proofImageBytes!))),
+                                              );
+                                            },
+                                            child: Image.memory(_proofImageBytes!),
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                ],
+                                  ],
+                                ),
                               ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(4), bottomRight: Radius.circular(4)),
+                          color: Theme.of(context).colorScheme.primaryContainer,
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: <Widget>[
+                            CustomIconButton(
+                              onPressed: _addContribution,
+                              label: 'Add Contribution',
+                              backgroundColor: Theme.of(context).colorScheme.onPrimary,
+                              borderRadius: 4,
+                              foregroundColor: Theme.of(context).textTheme.titleLarge?.color,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
                             ),
                           ],
                         ),
                       ),
-                    ),
-                    Container(
-                      decoration: BoxDecoration(
-                        borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(4), bottomRight: Radius.circular(4)),
-                        color: Theme.of(context).colorScheme.primaryContainer,
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: <Widget>[
-                          CustomIconButton(
-                            onPressed: _addContribution,
-                            label: 'Add Contribution',
-                            backgroundColor: Theme.of(context).colorScheme.onPrimary,
-                            borderRadius: 4,
-                            foregroundColor: Theme.of(context).textTheme.titleLarge?.color,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (_isLoading)
-                Positioned.fill(
-                  child: Container(
-                    color: Colors.black.withValues(alpha: 0.4),
-                    child: const Center(child: CircularProgressIndicator()),
+                    ],
                   ),
                 ),
-            ],
+                if (_isLoading)
+                  Positioned.fill(
+                    child: Container(
+                      color: Colors.black.withValues(alpha: 0.4),
+                      child: const Center(child: CircularProgressIndicator()),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),

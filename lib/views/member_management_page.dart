@@ -219,6 +219,7 @@ class _MemberManagementPageState extends ConsumerState<MemberManagementPage> {
     final SettingModel? setting = ref.watch(settingControllerProvider);
     return Scaffold(
       floatingActionButton: FloatingActionButton(
+        tooltip: 'Add Member',
         onPressed: setting != null ? _addMember : null,
         backgroundColor: setting != null ? null : Colors.grey.shade700,
         child: Icon(Icons.add, color: setting != null ? null : Colors.white),
@@ -266,7 +267,7 @@ class _MemberManagementPageState extends ConsumerState<MemberManagementPage> {
                                       onDismissed: (DismissDirection direction) async {
                                         setState(() => _isLoading = true);
                                         try {
-                                          await MembersApiService().deleteMemberByName(members[idx].name);
+                                          await MembersApiService().deleteMemberById(members[idx].id);
                                           if (context.mounted) {
                                             ref.read(memberControllerProvider.notifier).deleteMember(members[idx]);
                                             ScaffoldMessenger.of(context).hideCurrentSnackBar();

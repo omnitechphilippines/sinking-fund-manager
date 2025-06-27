@@ -12,27 +12,23 @@ class SettingModel {
 
   SettingModel({required this.id, required this.amountPerHead, required this.contributionPeriod, required this.startingDate, required this.createdAt, required this.updatedAt});
 
-  factory SettingModel.fromJson(Map<String, dynamic> json) {
-    return SettingModel(
-      id: int.parse(json['id'].toString()),
-      amountPerHead: double.parse(json['amount_per_head'].toString()),
-      contributionPeriod: _parseContributionPeriod(json['contribution_period']),
-      startingDate: DateTime.parse(json['starting_date']).toLocal(),
-      createdAt: DateTime.parse(json['created_at']).toLocal(),
-      updatedAt: DateTime.parse(json['updated_at']).toLocal(),
-    );
-  }
+  factory SettingModel.fromJson(Map<String, dynamic> json) => SettingModel(
+    id: int.parse(json['id'].toString()),
+    amountPerHead: double.parse(json['amount_per_head'].toString()),
+    contributionPeriod: _parseContributionPeriod(json['contribution_period']),
+    startingDate: DateTime.parse(json['starting_date']).toLocal(),
+    createdAt: DateTime.parse(json['created_at']).toLocal(),
+    updatedAt: DateTime.parse(json['updated_at']).toLocal(),
+  );
 
-  Map<String, dynamic> toJson() {
-    return <String, dynamic>{
-      'id': id,
-      'amount_per_head': amountPerHead,
-      'contribution_period': _contributionPeriodToString(contributionPeriod),
-      'starting_date': startingDate.toIso8601String(),
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
-    };
-  }
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'id': id,
+    'amount_per_head': amountPerHead,
+    'contribution_period': _contributionPeriodToString(contributionPeriod),
+    'starting_date': startingDate.toIso8601String(),
+    'created_at': createdAt.toIso8601String(),
+    'updated_at': updatedAt.toIso8601String(),
+  };
 
   static ContributionPeriod _parseContributionPeriod(String value) {
     switch (value) {
@@ -54,5 +50,16 @@ class SettingModel {
     }
   }
 
+  SettingModel copyWith({int? id, double? amountPerHead, ContributionPeriod? contributionPeriod, DateTime? startingDate, DateTime? createdAt, DateTime? updatedAt}) => SettingModel(
+    id: id ?? this.id,
+    amountPerHead: amountPerHead ?? this.amountPerHead,
+    contributionPeriod: contributionPeriod ?? this.contributionPeriod,
+    startingDate: startingDate ?? this.startingDate,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+
   String get formattedAmountPerHead => numberFormatter.format(amountPerHead);
+
+  String get formattedStartingDate => dateFormatter.format(startingDate);
 }

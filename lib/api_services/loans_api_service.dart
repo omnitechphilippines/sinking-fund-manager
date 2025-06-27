@@ -19,16 +19,21 @@ class LoansApiService {
 
   /// Add a new loan
   Future<bool> addLoan(LoanModel loan) async {
-    final http.Response response = await http.post(
-      Uri.parse(baseUrl),
-      headers: <String, String>{'Content-Type': 'application/json'},
-      body: jsonEncode(loan.toJson()),
-    );
-
+    final http.Response response = await http.post(Uri.parse(baseUrl), headers: <String, String>{'Content-Type': 'application/json'}, body: jsonEncode(loan.toJson()));
     if (response.statusCode == 201 || response.statusCode == 200) {
       return jsonDecode(response.body)['affectedRows'] == 1 ? true : false;
     } else {
       throw Exception('Add Loan failed: ${response.body}');
+    }
+  }
+
+  /// Update a loan
+  Future<bool> updateLoan(LoanModel loan) async {
+    final http.Response response = await http.put(Uri.parse(baseUrl), headers: <String, String>{'Content-Type': 'application/json'}, body: jsonEncode(loan.toJson()));
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      return jsonDecode(response.body)['affectedRows'] == 1 ? true : false;
+    } else {
+      throw Exception('Update Loan failed: ${response.body}');
     }
   }
 
@@ -42,7 +47,7 @@ class LoansApiService {
     }
   }
 
-  /// Delete loan by name
+  /// Delete loan by ID
   Future<void> deleteLoanById(String id) async {
     final http.Response response = await http.delete(Uri.parse('$baseUrl/$id'));
 

@@ -3,10 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sinking_fund_manager/controllers/member_controller.dart';
 import 'package:sinking_fund_manager/models/loan_model.dart';
+import 'package:sinking_fund_manager/models/loan_tracker_model.dart';
 import 'package:sinking_fund_manager/utils/currency_formatter.dart';
 import 'package:uuid/uuid.dart';
 
 import '../api_services/loans_api_service.dart';
+import '../controllers/loan_tracker_controller.dart';
 import '../models/member_model.dart';
 import '../utils/formatters.dart';
 import '../widgets/buttons/custom_icon_button.dart';
@@ -42,23 +44,24 @@ class _LoanDialogState extends ConsumerState<LoanDialog> {
   final FocusNode _escapeKeyFocusNode = FocusNode();
   bool _isLoading = false, _isError = false, _showPercent = false, _showGives = false;
   String _selectedMember = '';
-  double _interest = 0, _numberOfMonths = 0, _totalAmountToPay = 0;
-  int _numberOfGives = 0;
-  int _weekNumber = 0;
+  double _interestAmount = 0, _numberOfMonths = 0, _totalAmountToPay = 0;
+  int _numberOfGives = 0, _weekNumber = 0;
+  List<LoanTrackerModel> _loanTrackers = <LoanTrackerModel>[];
 
   @override
   void initState() {
     super.initState();
     if (widget.loan != null) {
+      _loanTrackers = ref.read(loanTrackerControllerProvider);
       _nameController.text = widget.loan!.name;
-      _loanAmountController.text = numberFormatter.format(widget.loan?.loanAmount);
-      _loanDateTimeController.text = dateTimeFormatter.format(widget.loan!.loanDateTime);
+      _loanAmountController.text = widget.loan!.formattedLoanAmount;
+      _loanDateTimeController.text = widget.loan!.formattedLoanDateTime;
       _numberOfGivesController.text = widget.loan!.numberOfGives.toString();
-      _giveNumberController.text = '1';
-      _paymentDueDateController.text = dateFormatter.format(widget.loan!.paymentStartDate);
-      _giveAmountController.text = numberFormatter.format(widget.loan?.payablePerGive);
-      _loanAmountAlreadyPaidController.text = numberFormatter.format(0);
-      _remainingLoanController.text = numberFormatter.format(widget.loan?.totalAmountToPay);
+      _giveNumberController.text = _loanTrackers.isNotEmpty ? _loanTrackers[0].giveNumber.toString() : '1';
+      _paymentDueDateController.text = widget.loan!.formattedPaymentStartDate;
+      _giveAmountController.text = widget.loan!.formattedCurrentGiveAmount;
+      _remainingLoanController.text = widget.loan!.formattedCurrentRemainingAmountToPay;
+      _loanAmountAlreadyPaidController.text = _loanTrackers.isNotEmpty ? _loanTrackers[0].formattedGiveAmount : numberFormatter.format(0);
     } else {
       final DateTime now = DateTime.now();
       _loanDateTimeController.text = dateTimeFormatter.format(now);
@@ -123,6 +126,12 @@ class _LoanDialogState extends ConsumerState<LoanDialog> {
           paymentStartDate: dateFormatter.parse(_paymentStartDateController.text),
           totalAmountToPay: numberFormatter.parse(_totalAmountToPayController.text).toDouble(),
           payablePerGive: numberFormatter.parse(_payablePerGiveController.text).toDouble(),
+          currentGiveNumber: 1,
+          currentGiveInterest: 0,
+          currentGiveAmount: numberFormatter.parse(_payablePerGiveController.text).toDouble(),
+          currentTotalAmountToPay: numberFormatter.parse(_totalAmountToPayController.text).toDouble(),
+          currentRemainingAmountToPay: numberFormatter.parse(_totalAmountToPayController.text).toDouble(),
+          currentPaymentDueDate: dateFormatter.parse(_paymentStartDateController.text),
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         ),
@@ -185,7 +194,14 @@ class _LoanDialogState extends ConsumerState<LoanDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final List<MemberModel> members = ref.watch(memberControllerProvider);
+    List<LoanTrackerModel> loanTrackersById = <LoanTrackerModel>[];
+    double totalLoanTrackerById = 0;
+    if (widget.loan != null) {
+      final List<LoanTrackerModel> allLoanTrackers = ref.read(loanTrackerControllerProvider);
+      loanTrackersById = allLoanTrackers.where((LoanTrackerModel l) => l.loanId == widget.loan?.id).toList();
+      loanTrackersById.sort((LoanTrackerModel a, LoanTrackerModel b) => a.paymentDueDate.compareTo(b.paymentDueDate));
+      totalLoanTrackerById = loanTrackersById.fold<double>(0.0, (double sum, LoanTrackerModel loanTracker) => sum + loanTracker.giveAmount);
+    }
     return Focus(
       focusNode: _escapeKeyFocusNode,
       autofocus: true,
@@ -247,7 +263,8 @@ class _LoanDialogState extends ConsumerState<LoanDialog> {
                                 style: TextStyle(fontSize: Theme.of(context).textTheme.titleLarge?.fontSize, color: Theme.of(context).textTheme.titleLarge?.color),
                                 value: _selectedMember.isNotEmpty ? _selectedMember : null,
                                 decoration: const InputDecoration(labelText: 'Comaker (optional)'),
-                                items: members
+                                items: ref
+                                    .read(memberControllerProvider)
                                     .map(
                                       (MemberModel member) => DropdownMenuItem<String>(
                                         value: member.name,
@@ -276,8 +293,8 @@ class _LoanDialogState extends ConsumerState<LoanDialog> {
                                 focusNode: _loanAmountControllerFocusNode,
                                 decoration: InputDecoration(
                                   prefixText: ' ₱ ',
-                                  prefixStyle: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color, fontSize: Theme.of(context).textTheme.titleLarge?.fontSize),
-                                  labelText: 'Loan Amount',
+                                  prefixStyle: TextStyle(color: _isError && _loanAmountController.text.isEmpty ? const Color(0xFFD39992) : Theme.of(context).textTheme.titleMedium?.color, fontSize: Theme.of(context).textTheme.titleLarge?.fontSize),
+                                  labelText: 'Loan Amount (remaining cash: ₱ )',
                                   errorText: _isError && _loanAmountController.text.isEmpty ? 'Required' : null,
                                 ),
                                 style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color),
@@ -288,15 +305,15 @@ class _LoanDialogState extends ConsumerState<LoanDialog> {
                                 onChanged: (String value) {
                                   if (value.isNotEmpty) {
                                     _showPercent = true;
-                                    _interest = 0.03 * numberFormatter.parse(_loanAmountController.text);
-                                    _totalAmountToPay = numberFormatter.parse(_loanAmountController.text) + (_numberOfMonths * _interest);
+                                    _interestAmount = 0.03 * numberFormatter.parse(_loanAmountController.text);
+                                    _totalAmountToPay = numberFormatter.parse(_loanAmountController.text) + (_numberOfMonths * _interestAmount);
                                     if (_showGives) {
                                       _totalAmountToPayController.text = numberFormatter.format(_totalAmountToPay);
                                       _payablePerGiveController.text = numberFormatter.format(_totalAmountToPay / _numberOfGives);
                                     }
                                   } else {
                                     _showPercent = false;
-                                    _interest = 0;
+                                    _interestAmount = 0;
                                     _totalAmountToPayController.text = _payablePerGiveController.text = '';
                                   }
                                   setState(() {});
@@ -307,7 +324,7 @@ class _LoanDialogState extends ConsumerState<LoanDialog> {
                               Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 16),
                                 child: Text(
-                                  '3% of ₱${_loanAmountController.text} = ₱${numberFormatter.format(_interest)}',
+                                  '3% of ₱${_loanAmountController.text} = ₱${numberFormatter.format(_interestAmount)}',
                                   style: TextStyle(fontSize: Theme.of(context).textTheme.titleLarge?.fontSize, color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)),
                                 ),
                               ),
@@ -346,7 +363,7 @@ class _LoanDialogState extends ConsumerState<LoanDialog> {
                                   if (value.isNotEmpty) {
                                     _numberOfGives = int.parse(_numberOfGivesController.text);
                                     _numberOfMonths = int.parse(_numberOfGivesController.text) / 2;
-                                    _totalAmountToPay = numberFormatter.parse(_loanAmountController.text.isNotEmpty ? _loanAmountController.text : '0') + (_numberOfMonths * _interest);
+                                    _totalAmountToPay = numberFormatter.parse(_loanAmountController.text.isNotEmpty ? _loanAmountController.text : '0') + (_numberOfMonths * _interestAmount);
                                     _totalAmountToPayController.text = numberFormatter.format(_totalAmountToPay);
                                     _payablePerGiveController.text = numberFormatter.format(_totalAmountToPay / _numberOfGives);
                                   } else {
@@ -362,7 +379,7 @@ class _LoanDialogState extends ConsumerState<LoanDialog> {
                               Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 16),
                                 child: Text(
-                                  '$_numberOfGives give${_numberOfGives <= 1 ? '' : 's'} => $_numberOfMonths month${_numberOfMonths <= 1 ? '' : 's'} * ₱${numberFormatter.format(_interest)} = ₱${numberFormatter.format(_numberOfMonths * _interest)}',
+                                  '$_numberOfGives give${_numberOfGives <= 1 ? '' : 's'} => $_numberOfMonths month${_numberOfMonths <= 1 ? '' : 's'} * ₱${numberFormatter.format(_interestAmount)} = ₱${numberFormatter.format(_numberOfMonths * _interestAmount)}',
                                   style: TextStyle(fontSize: Theme.of(context).textTheme.titleLarge?.fontSize, color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)),
                                 ),
                               ),
@@ -378,11 +395,11 @@ class _LoanDialogState extends ConsumerState<LoanDialog> {
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 16),
                               child: TextField(
-                                controller: _totalAmountToPayController,
+                                controller: _payablePerGiveController,
                                 decoration: InputDecoration(
                                   prefixText: ' ₱ ',
                                   prefixStyle: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color?.withValues(alpha: 0.5), fontSize: Theme.of(context).textTheme.titleLarge?.fontSize),
-                                  labelText: 'Total Amount To Pay',
+                                  labelText: 'Payable Per Give',
                                 ),
                                 style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color?.withValues(alpha: 0.5)),
                                 readOnly: true,
@@ -391,11 +408,11 @@ class _LoanDialogState extends ConsumerState<LoanDialog> {
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 16),
                               child: TextField(
-                                controller: _payablePerGiveController,
+                                controller: _totalAmountToPayController,
                                 decoration: InputDecoration(
                                   prefixText: ' ₱ ',
                                   prefixStyle: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color?.withValues(alpha: 0.5), fontSize: Theme.of(context).textTheme.titleLarge?.fontSize),
-                                  labelText: 'Payable Per Give',
+                                  labelText: 'Total Amount To Pay',
                                 ),
                                 style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color?.withValues(alpha: 0.5)),
                                 readOnly: true,
@@ -545,7 +562,8 @@ class _LoanDialogState extends ConsumerState<LoanDialog> {
                                       decoration: InputDecoration(
                                         prefixText: ' ₱ ',
                                         prefixStyle: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color?.withValues(alpha: 0.5), fontSize: Theme.of(context).textTheme.titleLarge?.fontSize),
-                                        labelText: 'Give Amount',
+                                        labelText:
+                                            'Give Amount${widget.loan!.currentGiveInterest > 0 ? ' (${widget.loan?.payablePerGive} + ${((widget.loan?.payablePerGive)! * (widget.loan!.currentGiveInterest / 100)).toStringAsFixed(2)}(${widget.loan!.currentGiveInterest}%))' : ''}',
                                       ),
                                       style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color?.withValues(alpha: 0.5)),
                                       readOnly: true,
@@ -577,7 +595,7 @@ class _LoanDialogState extends ConsumerState<LoanDialog> {
                                       decoration: InputDecoration(
                                         prefixText: ' ₱ ',
                                         prefixStyle: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color?.withValues(alpha: 0.5), fontSize: Theme.of(context).textTheme.titleLarge?.fontSize),
-                                        labelText: 'Remaining Loan (6)',
+                                        labelText: 'Remaining Loan (${_loanTrackers.isNotEmpty ? _loanTrackers[0].giveNumber : _numberOfGivesController.text})',
                                       ),
                                       style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color?.withValues(alpha: 0.5)),
                                       readOnly: true,
@@ -586,12 +604,62 @@ class _LoanDialogState extends ConsumerState<LoanDialog> {
                                 ],
                               ),
                             ),
-                            Center(
-                              child: Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: Text('No gives paid yet.', style: Theme.of(context).textTheme.titleLarge),
-                              ),
-                            ),
+                            loanTrackersById.isEmpty
+                                ? Center(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(16),
+                                      child: Text('No gives paid yet.', style: Theme.of(context).textTheme.titleLarge),
+                                    ),
+                                  )
+                                : Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 16.0),
+                                    child: Column(
+                                      spacing: 8,
+                                      children: <Widget>[
+                                        ListView.builder(
+                                          shrinkWrap: true,
+                                          padding: const EdgeInsets.symmetric(horizontal: 0),
+                                          itemCount: loanTrackersById.length,
+                                          itemBuilder: (BuildContext context, int index) {
+                                            final LoanTrackerModel loanTracker = loanTrackersById[index];
+                                            return Card(
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                                              child: ListTile(
+                                                title: Text('₱ ${loanTracker.formattedGiveAmount}   ${loanTracker.formattedPaymentDueDate}', style: Theme.of(context).textTheme.titleMedium),
+                                                subtitle: Text('Paid Date: ${loanTracker.formattedPaymentDateTime}', style: TextStyle(fontSize: Theme.of(context).textTheme.bodySmall?.fontSize)),
+                                                trailing: loanTracker.proof != null
+                                                    ? InkWell(
+                                                        onTap: () {
+                                                          showDialog(
+                                                            context: context,
+                                                            builder: (BuildContext context) => Dialog(
+                                                              insetPadding: const EdgeInsets.all(16),
+                                                              child: InteractiveViewer(child: Image.memory(loanTracker.proof!)),
+                                                            ),
+                                                          );
+                                                        },
+                                                        child: Image.memory(loanTracker.proof!),
+                                                      )
+                                                    : null,
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                        RichText(
+                                          text: TextSpan(
+                                            style: Theme.of(context).textTheme.titleLarge,
+                                            children: <InlineSpan>[
+                                              const TextSpan(text: 'Total contribution: '),
+                                              TextSpan(
+                                                text: '₱ ${numberFormatter.format(totalLoanTrackerById)}',
+                                                style: const TextStyle(color: Colors.blue),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                           ],
                         ),
                       ),

@@ -31,7 +31,7 @@ class _SettingDialogState extends ConsumerState<SettingDialog> {
     _amountPerHeadControllerFocusNode.requestFocus();
     final SettingModel? setting = ref.read(settingControllerProvider);
     if (setting != null) {
-      _amountPerHeadController.text = numberFormatter.format(setting.amountPerHead);
+      _amountPerHeadController.text = setting.formattedAmountPerHead;
       _selectedContributionPeriodType = setting.contributionPeriod;
       _startingDateController.text = dateFormatter.format(setting.startingDate);
     } else {
@@ -116,7 +116,7 @@ class _SettingDialogState extends ConsumerState<SettingDialog> {
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
-      final bool response = ref.read(settingControllerProvider) != null ? await SettingsApiService().editSetting(newSetting) : await SettingsApiService().addSetting(newSetting);
+      final bool response = ref.read(settingControllerProvider) != null ? await SettingsApiService().updateSetting(newSetting) : await SettingsApiService().addSetting(newSetting);
       if (response && mounted) {
         ref.read(settingControllerProvider.notifier).addSetting(newSetting);
         Navigator.of(context).pop(<bool>[true]);
@@ -202,7 +202,7 @@ class _SettingDialogState extends ConsumerState<SettingDialog> {
                           decoration: InputDecoration(
                             labelText: 'Amount Per Head',
                             prefixText: ' ₱ ',
-                            prefixStyle: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color, fontSize: Theme.of(context).textTheme.titleLarge?.fontSize),
+                            prefixStyle: TextStyle(color: _isError && _amountPerHeadController.text.isEmpty ? const Color(0xFFD39992) : Theme.of(context).textTheme.titleMedium?.color, fontSize: Theme.of(context).textTheme.titleLarge?.fontSize),
                             errorText: _isError && _amountPerHeadController.text.isEmpty ? 'Required' : null,
                           ),
                           style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color),

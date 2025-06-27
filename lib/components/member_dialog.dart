@@ -36,7 +36,7 @@ class _MemberDialogState extends ConsumerState<MemberDialog> {
     if (widget.member != null) {
       _nameController.text = widget.member!.name;
       _numberOfHeadsController.text = widget.member!.numberOfHeads.toString();
-      _contributionAmountController.text = numberFormatter.format(widget.member!.contributionAmount).toString();
+      _contributionAmountController.text = widget.member!.formattedContributionAmount;
     }
     _nameControllerFocusNode.requestFocus();
   }
@@ -105,13 +105,13 @@ class _MemberDialogState extends ConsumerState<MemberDialog> {
 
   @override
   Widget build(BuildContext context) {
-    List<ContributionModel> contributionsByName = <ContributionModel>[];
-    double totalContributionByName = 0;
+    List<ContributionModel> contributionsById = <ContributionModel>[];
+    double totalContributionById = 0;
     if (widget.member != null) {
       final List<ContributionModel> allContributions = ref.read(contributionControllerProvider);
-      contributionsByName = allContributions.where((ContributionModel c) => c.name == widget.member?.name).toList();
-      contributionsByName.sort((ContributionModel a, ContributionModel b) => a.contributionDate.compareTo(b.contributionDate));
-      totalContributionByName = contributionsByName.fold<double>(0.0, (double sum, ContributionModel contribution) => sum + contribution.contributionAmount);
+      contributionsById = allContributions.where((ContributionModel c) => c.memberId == widget.member?.id).toList();
+      contributionsById.sort((ContributionModel a, ContributionModel b) => a.contributionDate.compareTo(b.contributionDate));
+      totalContributionById = contributionsById.fold<double>(0.0, (double sum, ContributionModel contribution) => sum + contribution.contributionAmount);
     }
     return Focus(
       focusNode: _escapeKeyFocusNode,
@@ -219,7 +219,7 @@ class _MemberDialogState extends ConsumerState<MemberDialog> {
                                 ),
                               ),
                             )
-                          : contributionsByName.isEmpty
+                          : contributionsById.isEmpty
                           ? Padding(
                               padding: const EdgeInsets.all(16),
                               child: Text('No contributions yet.', style: Theme.of(context).textTheme.titleLarge),
@@ -232,14 +232,14 @@ class _MemberDialogState extends ConsumerState<MemberDialog> {
                                   ListView.builder(
                                     shrinkWrap: true,
                                     padding: const EdgeInsets.symmetric(horizontal: 0),
-                                    itemCount: contributionsByName.length,
+                                    itemCount: contributionsById.length,
                                     itemBuilder: (BuildContext context, int index) {
-                                      final ContributionModel contribution = contributionsByName[index];
+                                      final ContributionModel contribution = contributionsById[index];
                                       return Card(
                                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                                         child: ListTile(
-                                          title: Text('₱ ${contribution.formattedContributionAmount}   ${dateFormatter.format(contribution.contributionDate)}', style: Theme.of(context).textTheme.titleMedium),
-                                          subtitle: Text('Paid Date: ${dateTimeFormatter.format(contribution.paymentDateTime)}', style: TextStyle(fontSize: Theme.of(context).textTheme.bodySmall?.fontSize)),
+                                          title: Text('₱ ${contribution.formattedContributionAmount}   ${contribution.formattedContributionDate}', style: Theme.of(context).textTheme.titleMedium),
+                                          subtitle: Text('Paid Date: ${contribution.formattedPaymentDateTime}', style: TextStyle(fontSize: Theme.of(context).textTheme.bodySmall?.fontSize)),
                                           trailing: contribution.proof != null
                                               ? InkWell(
                                                   onTap: () {
@@ -264,7 +264,7 @@ class _MemberDialogState extends ConsumerState<MemberDialog> {
                                       children: <InlineSpan>[
                                         const TextSpan(text: 'Total contribution: '),
                                         TextSpan(
-                                          text: '₱ ${numberFormatter.format(totalContributionByName)}',
+                                          text: '₱ ${numberFormatter.format(totalContributionById)}',
                                           style: const TextStyle(color: Colors.blue),
                                         ),
                                       ],

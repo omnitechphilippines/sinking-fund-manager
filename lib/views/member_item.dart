@@ -9,7 +9,6 @@ import '../api_services/members_api_service.dart';
 import '../controllers/setting_controller.dart';
 import '../models/member_model.dart';
 import '../models/setting_model.dart';
-import '../utils/formatters.dart';
 import '../controllers/contribution_controller.dart';
 import '../models/contribution_model.dart';
 
@@ -52,33 +51,41 @@ class _MemberItemState extends ConsumerState<MemberItem> {
                         Text('₱ ${widget.member.formattedContributionAmount} (${widget.member.numberOfHeads})', style: Theme.of(context).textTheme.titleMedium),
                       ],
                     ),
+                    // RichText(
+                    //   text: TextSpan(
+                    //     style: Theme.of(context).textTheme.titleLarge,
+                    //     children: const <InlineSpan>[TextSpan(text: 'Due Date: ')],
+                    //   ),
+                    // ),
                     Row(
                       spacing: 4,
                       children: <Widget>[
                         IconButton(
                           tooltip: 'Add Contribution',
-                          onPressed: setting != null ? () async {
-                            final List<dynamic>? result = await showDialog(
-                              barrierDismissible: false,
-                              context: context,
-                              builder: (BuildContext _) => ContributionDialog(name: widget.member.name, contributionAmount: widget.member.contributionAmount),
-                            );
-                            if (result != null && result.isNotEmpty) {
-                              final ContributionModel newContribution = result.first;
-                              ref.read(contributionControllerProvider.notifier).addContribution(newContribution);
-                              if (context.mounted) {
-                                final String dateTime = dateTimeFormatter.format(newContribution.paymentDateTime);
-                                ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    backgroundColor: Colors.green,
-                                    content: Text('Contribution for member "${newContribution.name}" on $dateTime was successfully added!', style: const TextStyle(color: Colors.white)),
-                                  ),
-                                );
-                              }
-                            }
-                          } : null,
-                          icon: Icon(Icons.add_circle_sharp, color: setting != null ? null : Colors.grey.shade600,),
+                          onPressed: setting != null
+                              ? () async {
+                                  final List<dynamic>? result = await showDialog(
+                                    barrierDismissible: false,
+                                    context: context,
+                                    builder: (BuildContext _) => ContributionDialog(id: widget.member.id, name: widget.member.name, contributionAmount: widget.member.contributionAmount),
+                                  );
+                                  if (result != null && result.isNotEmpty) {
+                                    final ContributionModel newContribution = result.first;
+                                    ref.read(contributionControllerProvider.notifier).addContribution(newContribution);
+                                    if (context.mounted) {
+                                      final String dateTime = newContribution.formattedPaymentDateTime;
+                                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          backgroundColor: Colors.green,
+                                          content: Text('Contribution for member "${newContribution.memberId}" on $dateTime was successfully added!', style: const TextStyle(color: Colors.white)),
+                                        ),
+                                      );
+                                    }
+                                  }
+                                }
+                              : null,
+                          icon: Icon(Icons.add_circle_sharp, color: setting != null ? null : Colors.grey.shade600),
                         ),
                         IconButton(
                           tooltip: 'Delete Member',
@@ -87,7 +94,7 @@ class _MemberItemState extends ConsumerState<MemberItem> {
                             setState(() => _isLoading = true);
                             try {
                               if (shouldDelete) {
-                                await MembersApiService().deleteMemberByName(widget.member.name);
+                                await MembersApiService().deleteMemberById(widget.member.id);
                                 if (context.mounted) {
                                   ref.read(memberControllerProvider.notifier).deleteMember(widget.member);
                                   ScaffoldMessenger.of(context).hideCurrentSnackBar();

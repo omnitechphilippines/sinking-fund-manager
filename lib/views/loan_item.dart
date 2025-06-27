@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sinking_fund_manager/utils/formatters.dart';
 
 import '../api_services/loans_api_service.dart';
 import '../components/confirm_dialog.dart';
 import '../components/loan_dialog.dart';
+import '../components/loan_tracker_dialog.dart';
 import '../controllers/loan_controller.dart';
+import '../controllers/loan_tracker_controller.dart';
 import '../controllers/setting_controller.dart';
 import '../models/loan_model.dart';
+import '../models/loan_tracker_model.dart';
 import '../models/setting_model.dart';
-import '../utils/formatters.dart';
-import '../controllers/contribution_controller.dart';
-import '../models/contribution_model.dart';
 
 class LoanItem extends ConsumerStatefulWidget {
   final LoanModel loan;
@@ -22,7 +23,57 @@ class LoanItem extends ConsumerStatefulWidget {
 }
 
 class _LoanItemState extends ConsumerState<LoanItem> {
-  bool _isLoading = false;
+  bool _isLoading = true;
+  int _loanInterestRate = 0;
+  double _currentGiveAmount = 0, _currentLoanInterestAmount=0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((Duration _) async {
+      try {
+        final int overdue = DateTime.now().difference(widget.loan.paymentStartDate).inDays;
+        if (overdue > 0) {
+          _loanInterestRate = (((overdue) / 7).ceil());
+          _currentLoanInterestAmount = widget.loan.payablePerGive * (_loanInterestRate / 100);
+          _currentGiveAmount = _currentLoanInterestAmount + widget.loan.payablePerGive;
+          if (_currentGiveAmount != widget.loan.currentGiveAmount) {
+            final bool response = await LoansApiService().updateLoan(
+              widget.loan.copyWith(
+                currentGiveInterest: _loanInterestRate,
+                currentGiveAmount: _currentGiveAmount,
+                currentTotalAmountToPay: widget.loan.currentTotalAmountToPay + _currentLoanInterestAmount,
+                currentRemainingAmountToPay: widget.loan.currentRemainingAmountToPay + _currentLoanInterestAmount,
+              ),
+            );
+            if (response && mounted) {
+              ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  backgroundColor: Colors.green,
+                  content: Text('Successfully updated interest rate of ${widget.loan.name}!', style: const TextStyle(color: Colors.white)),
+                ),
+              );
+            }
+          }
+        } else {
+          _currentGiveAmount = widget.loan.currentGiveAmount;
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: Colors.red,
+              content: Text('Error: $e', style: const TextStyle(color: Colors.white)),
+            ),
+          );
+        }
+      } finally {
+        setState(() => _isLoading = false);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +91,7 @@ class _LoanItemState extends ConsumerState<LoanItem> {
                 builder: (BuildContext _) => LoanDialog(loan: widget.loan),
               ),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                padding: const EdgeInsets.only(left: 16, right: 6, top: 16, bottom: 16),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
@@ -48,42 +99,54 @@ class _LoanItemState extends ConsumerState<LoanItem> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Text(widget.loan.name, style: Theme.of(context).textTheme.titleLarge),
-                        Text('₱ ${numberFormatter.format(widget.loan.totalAmountToPay)} (${widget.loan.numberOfGives})', style: Theme.of(context).textTheme.titleMedium),
+                        Text('₱ ${widget.loan.formattedCurrentRemainingAmountToPay} (${widget.loan.numberOfGives - (widget.loan.currentGiveNumber - 1)})', style: Theme.of(context).textTheme.titleMedium),
                       ],
                     ),
                     Column(
                       children: <Widget>[
-                        Text('Due: ${dateFormatter.format(widget.loan.paymentStartDate)}', style: Theme.of(context).textTheme.titleLarge),
-                        Text('Amount: ₱ ${numberFormatter.format(widget.loan.payablePerGive)}', style: Theme.of(context).textTheme.titleMedium),
+                        RichText(
+                          text: TextSpan(
+                            style: Theme.of(context).textTheme.titleLarge,
+                            children: <InlineSpan>[
+                              const TextSpan(text: 'Due Date: '),
+                              TextSpan(
+                                text: widget.loan.formattedPaymentStartDate,
+                                style: TextStyle(color: DateTime.now().difference(widget.loan.paymentStartDate).inDays > 0 ? Colors.red : Colors.blue),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Text('₱ ${numberFormatter.format(_currentGiveAmount)} ${_loanInterestRate > 0 ? '(+$_loanInterestRate%)' : ''} (${widget.loan.currentGiveNumber})', style: Theme.of(context).textTheme.titleMedium),
                       ],
                     ),
                     Row(
-                      spacing: 4,
                       children: <Widget>[
                         IconButton(
                           tooltip: 'Pay Loan',
-                          onPressed: setting != null ? () async {
-                            final List<dynamic>? result = await showDialog(
-                              barrierDismissible: false,
-                              context: context,
-                              builder: (BuildContext _) => LoanDialog(loan: widget.loan),
-                            );
-                            if (result != null && result.isNotEmpty) {
-                              final ContributionModel newContribution = result.first;
-                              ref.read(contributionControllerProvider.notifier).addContribution(newContribution);
-                              if (context.mounted) {
-                                final String dateTime = dateTimeFormatter.format(newContribution.paymentDateTime);
-                                ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    backgroundColor: Colors.green,
-                                    content: Text('Contribution for member "${newContribution.name}" on $dateTime was successfully added!', style: const TextStyle(color: Colors.white)),
-                                  ),
-                                );
-                              }
-                            }
-                          } : null,
-                          icon: Icon(Icons.payments_outlined, color: setting != null ? null : Colors.grey.shade600,),
+                          onPressed: setting != null
+                              ? () async {
+                                  final List<dynamic>? result = await showDialog(
+                                    barrierDismissible: false,
+                                    context: context,
+                                    builder: (BuildContext _) => LoanTrackerDialog(loan: widget.loan),
+                                  );
+                                  if (result != null && result.isNotEmpty) {
+                                    final LoanTrackerModel newLoanTracker = result.first;
+                                    ref.read(loanTrackerControllerProvider.notifier).addLoanTracker(newLoanTracker);
+                                    if (context.mounted) {
+                                      final String dateTime = newLoanTracker.formattedPaymentDateTime;
+                                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          backgroundColor: Colors.green,
+                                          content: Text('Loan payment for member "${widget.loan.name}" on $dateTime was successfully added!', style: const TextStyle(color: Colors.white)),
+                                        ),
+                                      );
+                                    }
+                                  }
+                                }
+                              : null,
+                          icon: Icon(Icons.payments_outlined, color: setting != null ? null : Colors.grey.shade600),
                         ),
                         IconButton(
                           tooltip: 'Delete Loan',

@@ -32,13 +32,13 @@ class SettingsApiService {
     }
   }
 
-  /// Edit setting
-  Future<bool> editSetting(SettingModel setting) async {
+  /// Update setting
+  Future<bool> updateSetting(SettingModel setting) async {
     final http.Response response = await http.put(Uri.parse(baseUrl), headers: <String, String>{'Content-Type': 'application/json'}, body: jsonEncode(setting.toJson()));
     if (response.statusCode == 201 || response.statusCode == 200) {
       return jsonDecode(response.body)['affectedRows'] == 1 ? true : false;
     } else {
-      throw Exception('Edit Setting failed: ${response.body}');
+      throw Exception('Update Setting failed: ${response.body}');
     }
   }
 

@@ -13,10 +13,11 @@ import '../utils/formatters.dart';
 import '../widgets/buttons/custom_icon_button.dart';
 
 class ContributionDialog extends ConsumerStatefulWidget {
+  final String id;
   final String name;
   final double contributionAmount;
 
-  const ContributionDialog({super.key, required this.name, required this.contributionAmount});
+  const ContributionDialog({super.key, required this.id, required this.name, required this.contributionAmount});
 
   @override
   ConsumerState<ContributionDialog> createState() => _ContributionDialogState();
@@ -26,44 +27,45 @@ class _ContributionDialogState extends ConsumerState<ContributionDialog> {
   bool _isLoading = false;
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _contributionAmountController = TextEditingController();
-  final TextEditingController _paymentDateTimeController = TextEditingController();
+  final TextEditingController _paymentDateTimeController = TextEditingController(text: dateTimeFormatter.format(DateTime.now()));
   final FocusNode _contributionAmountControllerFocusNode = FocusNode();
   final FocusNode _escapeKeyFocusNode = FocusNode();
   Uint8List? _proofImageBytes;
   String? _proofImageName;
   late DateTime _contributionDate;
   String _hintText = '';
-  double _maximumAmountToBePaid = 0;
+  double _maximumAmountToPay = 0;
   bool _isError = false;
 
   @override
   void initState() {
     super.initState();
     _nameController.text = widget.name;
-    _paymentDateTimeController.text = dateTimeFormatter.format(DateTime.now());
     _contributionAmountControllerFocusNode.requestFocus();
     final List<ContributionModel> allContributions = ref.read(contributionControllerProvider);
-    final List<ContributionModel> contributionsByName = allContributions.where((ContributionModel c) => c.name == widget.name).toList();
-    contributionsByName.sort((ContributionModel a, ContributionModel b) => b.contributionDate.compareTo(a.contributionDate));
-    if (contributionsByName.isNotEmpty) {
-      _contributionDate = contributionsByName[0].contributionDate;
+    final List<ContributionModel> contributionsById = allContributions.where((ContributionModel c) => c.memberId == widget.id).toList();
+    contributionsById.sort((ContributionModel a, ContributionModel b) => b.contributionDate.compareTo(a.contributionDate));
+    if (contributionsById.isNotEmpty) {
+      _contributionDate = contributionsById[0].contributionDate;
       final int lastDayOfMonth = DateTime(_contributionDate.year, _contributionDate.month + 1, 0).day;
       final bool is15 = _contributionDate.day == 15;
-      final List<ContributionModel> contributionsByNameAndDate = contributionsByName.where((ContributionModel c) => c.contributionDate == _contributionDate).toList();
-      final double totalContributionByDate = contributionsByNameAndDate.fold<double>(0.0, (double sum, ContributionModel contribution) => sum + contribution.contributionAmount);
+      final List<ContributionModel> contributionsByIdAndDate = contributionsById.where((ContributionModel c) => c.contributionDate == _contributionDate).toList();
+      final double totalContributionByDate = contributionsByIdAndDate.fold<double>(0.0, (double sum, ContributionModel contribution) => sum + contribution.contributionAmount);
       if (totalContributionByDate == widget.contributionAmount) {
         _contributionDate = is15 ? DateTime(_contributionDate.year, _contributionDate.month, lastDayOfMonth) : DateTime(_contributionDate.year, _contributionDate.month + 1, 15);
         _hintText = 'not yet paid';
-        _maximumAmountToBePaid = totalContributionByDate;
+        _maximumAmountToPay = totalContributionByDate;
       } else {
-        _hintText = 'partially paid ₱ ${numberFormatter.format(totalContributionByDate)}';
-        _maximumAmountToBePaid = widget.contributionAmount - totalContributionByDate;
+        _hintText = 'paid ₱${numberFormatter.format(totalContributionByDate)}';
+        _maximumAmountToPay = widget.contributionAmount - totalContributionByDate;
       }
     } else {
       _contributionDate = ref.read(settingControllerProvider)!.startingDate;
       _hintText = 'not yet paid';
-      _maximumAmountToBePaid = widget.contributionAmount;
+      _maximumAmountToPay = widget.contributionAmount;
     }
+    _contributionAmountController.text = _maximumAmountToPay.toString();
+    appendDecimal(_contributionAmountController);
     setState(() {});
   }
 
@@ -103,7 +105,8 @@ class _ContributionDialogState extends ConsumerState<ContributionDialog> {
       final bool response = await ContributionsApiService().addContribution(
         ContributionModel(
           id: id,
-          name: widget.name,
+          memberId: widget.id,
+          memberName: widget.name,
           contributionDate: _contributionDate,
           contributionAmount: numberFormatter.parse(_contributionAmountController.text).toDouble(),
           paymentDateTime: dateTimeFormatter.parse(_paymentDateTimeController.text),
@@ -206,7 +209,7 @@ class _ContributionDialogState extends ConsumerState<ContributionDialog> {
                                   const TextSpan(text: 'Add Contribution for:   '),
                                   TextSpan(
                                     text: dateFormatter.format(_contributionDate),
-                                    style: const TextStyle(color: Colors.red),
+                                    style: TextStyle(color: DateTime.now().difference(_contributionDate).inDays > 0 ? Colors.red : Colors.blue),
                                   ),
                                 ],
                               ),
@@ -237,15 +240,16 @@ class _ContributionDialogState extends ConsumerState<ContributionDialog> {
                                   keyboardType: TextInputType.number,
                                   inputFormatters: <TextInputFormatter>[
                                     FilteringTextInputFormatter.digitsOnly,
-                                    TextInputFormatter.withFunction((TextEditingValue oldValue, TextEditingValue newValue) => (int.tryParse(newValue.text) ?? 0) <= _maximumAmountToBePaid ? newValue : oldValue),
+                                    TextInputFormatter.withFunction((TextEditingValue oldValue, TextEditingValue newValue) => (int.tryParse(newValue.text) ?? 0) <= _maximumAmountToPay ? newValue : oldValue),
                                     CurrencyFormatter(),
                                   ],
                                   decoration: InputDecoration(
                                     prefixText: ' ₱ ',
-                                    prefixStyle: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color, fontSize: Theme.of(context).textTheme.titleLarge?.fontSize),
-                                    labelText: 'Contribution Amount (₱ ${numberFormatter.format(widget.contributionAmount)})',
-                                    hintText: _hintText,
-                                    hintStyle: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color?.withValues(alpha: 0.5)),
+                                    prefixStyle: TextStyle(
+                                      color: _isError && _contributionAmountController.text.isEmpty ? const Color(0xFFD39992) : Theme.of(context).textTheme.titleMedium?.color,
+                                      fontSize: Theme.of(context).textTheme.titleLarge?.fontSize,
+                                    ),
+                                    labelText: 'Contribution Amount ($_hintText)',
                                     errorText: _isError && _contributionAmountController.text.isEmpty ? 'Required' : null,
                                   ),
                                   onSubmitted: (String _) {
@@ -284,38 +288,45 @@ class _ContributionDialogState extends ConsumerState<ContributionDialog> {
                                 padding: const EdgeInsets.symmetric(horizontal: 16),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
+                                  spacing: 8,
                                   children: <Widget>[
                                     Text('Upload Proof (Optional):', style: Theme.of(context).textTheme.titleMedium),
-                                    const SizedBox(height: 8),
                                     Row(
+                                      spacing: 16,
                                       children: <Widget>[
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                                          child: ElevatedButton.icon(
-                                            style: ElevatedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4))),
-                                            onPressed: () {
-                                              _pickProofImage();
-                                              appendDecimal(_contributionAmountController);
-                                            },
-                                            icon: const Icon(Icons.upload),
-                                            label: const Text('Choose Image'),
-                                          ),
+                                        ElevatedButton.icon(
+                                          style: ElevatedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4))),
+                                          onPressed: () {
+                                            _pickProofImage();
+                                            appendDecimal(_contributionAmountController);
+                                          },
+                                          icon: const Icon(Icons.upload),
+                                          label: const Text('Choose Image'),
                                         ),
-                                        const SizedBox(width: 16),
-                                        if (_proofImageName != null) Text(_proofImageName!, style: Theme.of(context).textTheme.titleMedium, overflow: TextOverflow.ellipsis),
+                                        if (_proofImageName != null)
+                                          Expanded(
+                                            child: Text(_proofImageName!, overflow: TextOverflow.ellipsis, maxLines: 1, style: Theme.of(context).textTheme.titleMedium),
+                                          ),
+                                        if (_proofImageName != null)
+                                          IconButton(
+                                            onPressed: () {
+                                              _proofImageName = null;
+                                              _proofImageBytes = null;
+                                              setState(() {});
+                                            },
+                                            icon: const Icon(Icons.close),
+                                          ),
                                       ],
                                     ),
                                     if (_proofImageBytes != null)
                                       Center(
                                         child: Padding(
-                                          padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 32),
+                                          padding: const EdgeInsets.all(8),
                                           child: InkWell(
-                                            onTap: () {
-                                              showDialog(
-                                                context: context,
-                                                builder: (BuildContext context) => Dialog(child: InteractiveViewer(child: Image.memory(_proofImageBytes!))),
-                                              );
-                                            },
+                                            onTap: () => showDialog(
+                                              context: context,
+                                              builder: (BuildContext context) => Dialog(child: InteractiveViewer(child: Image.memory(_proofImageBytes!))),
+                                            ),
                                             child: Image.memory(_proofImageBytes!),
                                           ),
                                         ),

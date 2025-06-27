@@ -12,6 +12,7 @@ import '../controllers/loan_controller.dart';
 import '../controllers/loan_tracker_controller.dart';
 import '../controllers/setting_controller.dart';
 import '../models/loan_model.dart';
+import '../models/loan_tracker_model.dart';
 import '../models/setting_model.dart';
 import '../utils/formatters.dart';
 import 'loan_item.dart';
@@ -223,7 +224,8 @@ class _HomePageState extends ConsumerState<LoanManagementPage> {
   Widget build(BuildContext context) {
     final List<LoanModel> loans = ref.watch(loanControllerProvider);
     final double totalUnpaidLoans = loans.fold(0.0, (double sum, LoanModel loan) => sum + loan.currentRemainingAmountToPay);
-    final double totalPaidLoans = loans.fold(0.0, (double sum, LoanModel loan) => sum + (loan.currentTotalAmountToPay - loan.currentRemainingAmountToPay));
+    final List<LoanTrackerModel> loanTrackers = ref.watch(loanTrackerControllerProvider);
+    final double totalPaidLoans = loanTrackers.fold(0.0, (double sum, LoanTrackerModel loanTracker) => sum + (loanTracker.giveAmount));
     final SettingModel? setting = ref.watch(settingControllerProvider);
     return Scaffold(
       floatingActionButton: FloatingActionButton(

@@ -66,7 +66,7 @@ class LoanModel {
     'loan_amount': loanAmount,
     'loan_date_time': loanDateTime.toIso8601String(),
     'number_of_gives': numberOfGives,
-    'payment_start_date': dateFormatter.format(paymentStartDate),
+    'payment_start_date': paymentStartDate.toIso8601String(),
     'payable_per_give': payablePerGive,
     'total_amount_to_pay': totalAmountToPay,
     'current_give_number': currentGiveNumber,
@@ -74,7 +74,7 @@ class LoanModel {
     'current_give_amount': currentGiveAmount,
     'current_total_amount_to_pay': currentTotalAmountToPay,
     'current_remaining_amount_to_pay': currentRemainingAmountToPay,
-    'current_payment_due_date': dateFormatter.format(currentPaymentDueDate),
+    'current_payment_due_date': currentPaymentDueDate.toIso8601String(),
     'created_at': createdAt.toIso8601String(),
     'updated_at': updatedAt.toIso8601String(),
   };

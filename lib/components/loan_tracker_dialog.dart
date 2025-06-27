@@ -87,23 +87,21 @@ class _LoanTrackerDialogState extends ConsumerState<LoanTrackerDialog> {
     try {
       final String id = const Uuid().v4();
       final bool isFullyPaid = double.parse(_giveAmountController.text) == widget.loan.currentGiveAmount;
-      final bool response = await LoanTrackersApiService().addLoanTracker(
-        LoanTrackerModel(
-          id: id,
-          loanId: widget.loan.id,
-          loanName: widget.loan.name,
-          paymentDueDate: widget.loan.currentPaymentDueDate,
-          giveNumber: widget.loan.currentGiveNumber,
-          interestRate: widget.loan.currentGiveInterest,
-          giveAmount: double.parse(_giveAmountController.text),
-          remainingGiveAmount: widget.loan.currentGiveAmount - double.parse(_giveAmountController.text),
-          paymentDateTime: dateTimeFormatter.parse(_paymentDateTimeController.text),
-          proof: _proofImageBytes,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        ),
-        _proofImageName,
+      final LoanTrackerModel newLoanTracker = LoanTrackerModel(
+        id: id,
+        loanId: widget.loan.id,
+        loanName: widget.loan.name,
+        paymentDueDate: widget.loan.currentPaymentDueDate,
+        giveNumber: widget.loan.currentGiveNumber,
+        interestRate: widget.loan.currentGiveInterest,
+        giveAmount: double.parse(_giveAmountController.text),
+        remainingGiveAmount: widget.loan.currentGiveAmount - double.parse(_giveAmountController.text),
+        paymentDateTime: dateTimeFormatter.parse(_paymentDateTimeController.text),
+        proof: _proofImageBytes,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
       );
+      final bool response = await LoanTrackersApiService().addLoanTracker(newLoanTracker, _proofImageName);
       if (response) {
         final DateTime now = DateTime.now();
         final int weekNumber = ((now.day - 1) ~/ 7) + 1;
@@ -124,7 +122,7 @@ class _LoanTrackerDialogState extends ConsumerState<LoanTrackerDialog> {
           currentPaymentDueDate: newDueDate,
         );
         final bool response2 = await LoansApiService().updateLoan(updatedLoan);
-        if (response2 && mounted) Navigator.of(context).pop(<LoanModel>[updatedLoan]);
+        if (response2 && mounted) Navigator.of(context).pop(<Object>[newLoanTracker, updatedLoan]);
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -225,7 +223,7 @@ class _LoanTrackerDialogState extends ConsumerState<LoanTrackerDialog> {
                                   const TextSpan(text: 'Pay Loan for:   '),
                                   TextSpan(
                                     text: widget.loan.formattedCurrentPaymentDueDate,
-                                    style: TextStyle(color: DateTime.now().difference(widget.loan.paymentStartDate).inDays > 0 ? Colors.red : Colors.blue),
+                                    style: TextStyle(color: DateTime.now().difference(widget.loan.currentPaymentDueDate).inDays > 0 ? Colors.red : Colors.blue),
                                   ),
                                 ],
                               ),

@@ -39,18 +39,15 @@ void main() async {
   await Hive.initFlutter();
   await Hive.openBox('auth');
   final ProviderContainer container = ProviderContainer();
-  if (kIsWeb) {
-    final int? navType = performance?.navigation?.type;
-    if (navType == 1) {
-      await container.read(settingControllerProvider.notifier).init();
-      await container.read(summaryControllerProvider.notifier).init();
-      await container.read(memberControllerProvider.notifier).init();
-      await container.read(contributionControllerProvider.notifier).init();
-      await container.read(loanControllerProvider.notifier).init();
-      await container.read(loanTrackerControllerProvider.notifier).init();
-    }
+  if (kIsWeb && performance?.navigation?.type == 1) {
+    await container.read(settingControllerProvider.notifier).init();
+    await container.read(summaryControllerProvider.notifier).init();
+    await container.read(memberControllerProvider.notifier).init();
+    await container.read(contributionControllerProvider.notifier).init();
+    await container.read(loanControllerProvider.notifier).init();
+    await container.read(loanTrackerControllerProvider.notifier).init();
   }
-  runApp(const ProviderScope(child: SinkingFundManager()));
+  runApp(UncontrolledProviderScope(container: container, child: const SinkingFundManager()));
 }
 
 class SinkingFundManager extends StatelessWidget {

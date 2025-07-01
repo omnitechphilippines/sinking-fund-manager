@@ -12,7 +12,6 @@ import 'controllers/setting_controller.dart';
 import 'controllers/summary_controller.dart';
 import 'router.dart';
 
-// JS Interop for performance.navigation.type (to detect browser refresh)
 @JS('window.performance')
 external Performance? get performance;
 
@@ -32,12 +31,6 @@ extension NavigationExtension on Navigation {
   external int get type;
 }
 
-// JS Interop for window.addEventListener
-@JS('window.addEventListener')
-external void addWindowEventListener(String type, JSFunction listener);
-
-JSFunction allowDartFunction(void Function(JSAny event) func) => func.toJS;
-
 ColorScheme kColorScheme = ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 96, 59, 181));
 ColorScheme kDarkColorScheme = ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 5, 99, 125), brightness: Brightness.dark);
 
@@ -49,7 +42,6 @@ void main() async {
   if (kIsWeb) {
     final int? navType = performance?.navigation?.type;
     if (navType == 1) {
-      print('Browser refresh detected at startup. Re-initializing state...');
       await container.read(settingControllerProvider.notifier).init();
       await container.read(summaryControllerProvider.notifier).init();
       await container.read(memberControllerProvider.notifier).init();

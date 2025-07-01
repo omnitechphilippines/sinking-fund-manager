@@ -140,10 +140,12 @@ class _LoanItemState extends ConsumerState<LoanItem> {
                                     final LoanTrackerModel newLoanTracker = result.first;
                                     final LoanModel updatedLoan = result[1];
                                     ref.read(loanTrackerControllerProvider.notifier).addLoanTracker(newLoanTracker);
+                                    _currentGiveNumber = updatedLoan.currentGiveNumber;
                                     _currentPaymentDueDate = updatedLoan.currentPaymentDueDate;
                                     _currentGiveAmount = updatedLoan.currentGiveAmount;
                                     _loanInterestRate = updatedLoan.currentGiveInterest;
                                     _loan = updatedLoan;
+                                    await ref.read(loanControllerProvider.notifier).init();
                                     if (context.mounted) {
                                       final String dateTime = newLoanTracker.formattedPaymentDateTime;
                                       ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -154,7 +156,6 @@ class _LoanItemState extends ConsumerState<LoanItem> {
                                         ),
                                       );
                                     }
-                                    setState(() {});
                                   }
                                 }
                               : null,

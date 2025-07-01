@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sinking_fund_manager/models/setting_model.dart';
+import 'package:sinking_fund_manager/models/summary_model.dart';
 
 import '../../../../components/footer.dart';
 import '../../../../components/side_nav.dart';
@@ -13,6 +14,7 @@ import '../controllers/member_controller.dart';
 import '../api_services/members_api_service.dart';
 import '../../../models/contribution_model.dart';
 import '../controllers/setting_controller.dart';
+import '../controllers/summary_controller.dart';
 import '../models/member_model.dart';
 import '../../../views/member_item.dart';
 import '../utils/formatters.dart';
@@ -27,7 +29,7 @@ class MemberManagementPage extends ConsumerStatefulWidget {
 class _MemberManagementPageState extends ConsumerState<MemberManagementPage> {
   bool _isLoading = true;
   MemberSortType _selectedSortType = MemberSortType.name;
-  SortDirection _selectedSortDirection = SortDirection.ascending;
+  MemberSortDirection _selectedSortDirection = MemberSortDirection.ascending;
   late final ScrollController _scrollController;
 
   @override
@@ -36,9 +38,9 @@ class _MemberManagementPageState extends ConsumerState<MemberManagementPage> {
     _scrollController = ScrollController();
     WidgetsBinding.instance.addPostFrameCallback((Duration _) async {
       try {
-        await ref.read(memberControllerProvider.notifier).init();
+        // await ref.read(memberControllerProvider.notifier).init();
         ref.read(memberControllerProvider.notifier).setSort(_selectedSortType, _selectedSortDirection);
-        await ref.read(settingControllerProvider.notifier).init();
+        // await ref.read(settingControllerProvider.notifier).init();
         if (ref.read(settingControllerProvider) == null && mounted) {
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
@@ -48,7 +50,8 @@ class _MemberManagementPageState extends ConsumerState<MemberManagementPage> {
             ),
           );
         }
-        await ref.read(contributionControllerProvider.notifier).init();
+        // await ref.read(contributionControllerProvider.notifier).init();
+        // await ref.read(summaryControllerProvider.notifier).init();
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -121,10 +124,10 @@ class _MemberManagementPageState extends ConsumerState<MemberManagementPage> {
             const SizedBox(width: 16),
             Text('Direction: ', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(width: 8),
-            DropdownButton<SortDirection>(
+            DropdownButton<MemberSortDirection>(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               value: _selectedSortDirection,
-              onChanged: (SortDirection? value) {
+              onChanged: (MemberSortDirection? value) {
                 if (value != null) {
                   setState(() => _selectedSortDirection = value);
                   ref.read(memberControllerProvider.notifier).setSort(_selectedSortType, _selectedSortDirection);
@@ -132,12 +135,12 @@ class _MemberManagementPageState extends ConsumerState<MemberManagementPage> {
                 }
               },
               onTap: () => FocusScope.of(context).requestFocus(FocusNode()),
-              items: SortDirection.values.map((SortDirection dir) {
+              items: MemberSortDirection.values.map((MemberSortDirection dir) {
                 final String label = switch (dir) {
-                  SortDirection.ascending => 'Ascending',
-                  SortDirection.descending => 'Descending',
+                  MemberSortDirection.ascending => 'Ascending',
+                  MemberSortDirection.descending => 'Descending',
                 };
-                return DropdownMenuItem<SortDirection>(value: dir, child: Text(label));
+                return DropdownMenuItem<MemberSortDirection>(value: dir, child: Text(label));
               }).toList(),
             ),
           ],
@@ -183,9 +186,9 @@ class _MemberManagementPageState extends ConsumerState<MemberManagementPage> {
           children: <Widget>[
             Text('Direction: ', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(width: 8),
-            DropdownButton<SortDirection>(
+            DropdownButton<MemberSortDirection>(
               value: _selectedSortDirection,
-              onChanged: (SortDirection? value) {
+              onChanged: (MemberSortDirection? value) {
                 if (value != null) {
                   setState(() => _selectedSortDirection = value);
                   ref.read(memberControllerProvider.notifier).setSort(_selectedSortType, _selectedSortDirection);
@@ -193,12 +196,12 @@ class _MemberManagementPageState extends ConsumerState<MemberManagementPage> {
                 }
               },
               onTap: () => FocusScope.of(context).requestFocus(FocusNode()),
-              items: SortDirection.values.map((SortDirection dir) {
+              items: MemberSortDirection.values.map((MemberSortDirection dir) {
                 final String label = switch (dir) {
-                  SortDirection.ascending => 'Ascending',
-                  SortDirection.descending => 'Descending',
+                  MemberSortDirection.ascending => 'Ascending',
+                  MemberSortDirection.descending => 'Descending',
                 };
-                return DropdownMenuItem<SortDirection>(
+                return DropdownMenuItem<MemberSortDirection>(
                   value: dir,
                   child: Padding(padding: const EdgeInsets.symmetric(horizontal: 4.0), child: Text(label)),
                 );
@@ -214,9 +217,8 @@ class _MemberManagementPageState extends ConsumerState<MemberManagementPage> {
   @override
   Widget build(BuildContext context) {
     final List<MemberModel> members = ref.watch(memberControllerProvider);
-    final List<ContributionModel> contributions = ref.watch(contributionControllerProvider);
-    final double totalContributions = contributions.fold(0.0, (double sum, ContributionModel contribution)=>sum+contribution.contributionAmount);
     final SettingModel? setting = ref.watch(settingControllerProvider);
+    final SummaryModel? summary = ref.watch(summaryControllerProvider);
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         tooltip: 'Add Member',
@@ -291,14 +293,34 @@ class _MemberManagementPageState extends ConsumerState<MemberManagementPage> {
                                       child: MemberItem(member: members[idx]),
                                     ),
                                   ),
-                                  RichText(
-                                    text: TextSpan(
-                                      style: Theme.of(context).textTheme.titleLarge,
-                                      children: <InlineSpan>[
-                                        const TextSpan(text: 'Total contribution: '),
-                                        TextSpan(
-                                          text: '₱ ${numberFormatter.format(totalContributions)}',
-                                          style: const TextStyle(color: Colors.blue),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                                    child: Wrap(
+                                      spacing: 32,
+                                      children: <Widget>[
+                                        RichText(
+                                          text: TextSpan(
+                                            style: Theme.of(context).textTheme.titleLarge,
+                                            children: <InlineSpan>[
+                                              const TextSpan(text: 'Total contribution: '),
+                                              TextSpan(
+                                                text: '₱ ${numberFormatter.format(summary?.totalContribution)}',
+                                                style: const TextStyle(color: Colors.blue),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        RichText(
+                                          text: TextSpan(
+                                            style: Theme.of(context).textTheme.titleLarge,
+                                            children: <InlineSpan>[
+                                              const TextSpan(text: 'Total Cash On-hand: '),
+                                              TextSpan(
+                                                text: '₱ ${numberFormatter.format(summary?.totalCashOnHand)}',
+                                                style: const TextStyle(color: Colors.blue),
+                                              ),
+                                            ],
+                                          ),
                                         ),
                                       ],
                                     ),

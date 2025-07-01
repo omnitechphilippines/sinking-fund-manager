@@ -7,7 +7,6 @@ import 'package:sinking_fund_manager/models/loan_model.dart';
 import 'package:uuid/uuid.dart';
 
 import '../api_services/loans_api_service.dart';
-import '../controllers/loan_tracker_controller.dart';
 import '../models/loan_tracker_model.dart';
 import '../utils/currency_formatter.dart';
 import '../utils/formatters.dart';
@@ -32,30 +31,26 @@ class _LoanTrackerDialogState extends ConsumerState<LoanTrackerDialog> {
   final TextEditingController _payablePerGiveController = TextEditingController();
   final TextEditingController _giveNumberController = TextEditingController();
   final TextEditingController _giveAmountController = TextEditingController();
-  final TextEditingController _loanAmountAlreadyPaidController = TextEditingController();
   final TextEditingController _remainingLoanController = TextEditingController();
   final TextEditingController _paymentDateTimeController = TextEditingController(text: dateTimeFormatter.format(DateTime.now()));
   final FocusNode _giveAmountControllerFocusNode = FocusNode();
   final FocusNode _paymentDateTimeControllerFocusNode = FocusNode();
   final FocusNode _escapeKeyFocusNode = FocusNode();
   bool _isLoading = false, _isError = false;
-  List<LoanTrackerModel> _loanTrackers = <LoanTrackerModel>[];
   Uint8List? _proofImageBytes;
   String? _proofImageName;
 
   @override
   void initState() {
     super.initState();
-    _loanTrackers = ref.read(loanTrackerControllerProvider);
     _giveAmountControllerFocusNode.requestFocus();
     _nameController.text = widget.loan.name;
     _loanAmountController.text = widget.loan.formattedLoanAmount;
     _loanDateTimeController.text = widget.loan.formattedLoanDateTime;
     _numberOfGivesController.text = widget.loan.numberOfGives.toString();
-    _giveNumberController.text = _loanTrackers.isNotEmpty ? _loanTrackers[0].giveNumber.toString() : '1';
+    _giveNumberController.text = widget.loan.currentGiveNumber.toString();
     _giveAmountController.text = widget.loan.formattedCurrentGiveAmount;
     _remainingLoanController.text = widget.loan.formattedCurrentRemainingAmountToPay;
-    _loanAmountAlreadyPaidController.text = _loanTrackers.isNotEmpty ? _loanTrackers[0].formattedGiveAmount : numberFormatter.format(0);
   }
 
   @override
@@ -67,10 +62,13 @@ class _LoanTrackerDialogState extends ConsumerState<LoanTrackerDialog> {
     _paymentStartDateController.dispose();
     _totalAmountToPayController.dispose();
     _payablePerGiveController.dispose();
-    _giveAmountControllerFocusNode.dispose();
-    _escapeKeyFocusNode.dispose();
     _giveNumberController.dispose();
+    _giveAmountController.dispose();
+    _remainingLoanController.dispose();
+    _paymentDateTimeController.dispose();
+    _giveAmountControllerFocusNode.dispose();
     _paymentDateTimeControllerFocusNode.dispose();
+    _escapeKeyFocusNode.dispose();
     super.dispose();
   }
 
@@ -103,16 +101,24 @@ class _LoanTrackerDialogState extends ConsumerState<LoanTrackerDialog> {
       );
       final bool response = await LoanTrackersApiService().addLoanTracker(newLoanTracker, _proofImageName);
       if (response) {
-        final DateTime now = DateTime.now();
-        final int weekNumber = ((now.day - 1) ~/ 7) + 1;
-        final int lastDayOfMonth = DateTime(now.year, now.month + 1, 0).day;
+        final int overdue = DateTime.now().difference(widget.loan.currentPaymentDueDate).inDays;
         DateTime newDueDate;
-        if (weekNumber == 1) {
-          newDueDate = DateTime(now.year, now.month, 15);
-        } else if (weekNumber == 2 || weekNumber == 3) {
-          newDueDate = DateTime(now.year, now.month, lastDayOfMonth);
+        if (overdue > 0) {
+          final DateTime now = DateTime.now();
+          final int weekNumber = ((now.day - 1) ~/ 7) + 1;
+          final int lastDayOfMonth = DateTime(now.year, now.month + 1, 0).day;
+          if (weekNumber == 1) {
+            newDueDate = DateTime(now.year, now.month, 15);
+          } else if (weekNumber == 2 || weekNumber == 3) {
+            newDueDate = DateTime(now.year, now.month, lastDayOfMonth);
+          } else {
+            newDueDate = DateTime(now.year, now.month + 1, 15);
+          }
         } else {
-          newDueDate = DateTime(now.year, now.month + 1, 15);
+          final DateTime oldDueDate = widget.loan.currentPaymentDueDate;
+          final int lastDayOfMonth = DateTime(oldDueDate.year, oldDueDate.month + 1, 0).day;
+          final bool is15 = oldDueDate.day == 15;
+          newDueDate = is15 ? DateTime(oldDueDate.year, oldDueDate.month, lastDayOfMonth) : DateTime(oldDueDate.year, oldDueDate.month + 1, 15);
         }
         final LoanModel updatedLoan = widget.loan.copyWith(
           currentGiveNumber: isFullyPaid && widget.loan.currentGiveNumber != widget.loan.numberOfGives ? widget.loan.currentGiveNumber + 1 : widget.loan.currentGiveNumber,
@@ -325,7 +331,7 @@ class _LoanTrackerDialogState extends ConsumerState<LoanTrackerDialog> {
                                         focusNode: _giveAmountControllerFocusNode,
                                         keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                         inputFormatters: <TextInputFormatter>[
-                                          TextInputFormatter.withFunction((TextEditingValue oldValue, TextEditingValue newValue) => (int.tryParse(newValue.text) ?? 0) <= widget.loan.currentGiveAmount ? newValue : oldValue),
+                                          TextInputFormatter.withFunction((TextEditingValue oldValue, TextEditingValue newValue) => (double.tryParse(newValue.text) ?? 0) <= widget.loan.currentGiveAmount ? newValue : oldValue),
                                           CurrencyFormatter(),
                                         ],
                                         decoration: InputDecoration(

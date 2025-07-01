@@ -33,7 +33,7 @@ class ContributionsApiService {
     }
     final http.StreamedResponse response = await request.send();
     if (response.statusCode == 200 || response.statusCode == 201) {
-      return jsonDecode(await response.stream.bytesToString())['affectedRows'] == 1 ? true : false;
+      return jsonDecode(await response.stream.bytesToString())['affectedRows'] == 2 ? true : false;
     } else {
       throw Exception('Add Contribution failed: ${response.statusCode}');
     }

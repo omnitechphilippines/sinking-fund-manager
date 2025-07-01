@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sinking_fund_manager/controllers/setting_controller.dart';
+import 'package:sinking_fund_manager/controllers/summary_controller.dart';
+import 'package:sinking_fund_manager/models/summary_model.dart';
 import 'package:uuid/uuid.dart';
 
 import '../api_services/contributions_api_service.dart';
@@ -101,6 +103,7 @@ class _ContributionDialogState extends ConsumerState<ContributionDialog> {
     setState(() => _isLoading = true);
     try {
       appendDecimal(_contributionAmountController);
+      final SummaryModel? summary = ref.read(summaryControllerProvider);
       final String id = const Uuid().v4();
       final bool response = await ContributionsApiService().addContribution(
         ContributionModel(
@@ -118,7 +121,7 @@ class _ContributionDialogState extends ConsumerState<ContributionDialog> {
       );
       if (response) {
         final ContributionModel newContribution = await ContributionsApiService().getContributionById(id);
-        if (mounted) Navigator.of(context).pop(<ContributionModel>[newContribution]);
+        if (mounted) Navigator.of(context).pop(<Object>[newContribution, summary!.totalContribution + newContribution.contributionAmount, summary.totalCashOnHand + newContribution.contributionAmount]);
       } else {
         if (mounted) {
           final String dateTime = dateTimeFormatter.format(dateTimeFormatter.parse(_paymentDateTimeController.text));
@@ -237,10 +240,9 @@ class _ContributionDialogState extends ConsumerState<ContributionDialog> {
                                 padding: const EdgeInsets.symmetric(horizontal: 16),
                                 child: TextField(
                                   controller: _contributionAmountController,
-                                  keyboardType: TextInputType.number,
+                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                   inputFormatters: <TextInputFormatter>[
-                                    FilteringTextInputFormatter.digitsOnly,
-                                    TextInputFormatter.withFunction((TextEditingValue oldValue, TextEditingValue newValue) => (int.tryParse(newValue.text) ?? 0) <= _maximumAmountToPay ? newValue : oldValue),
+                                    TextInputFormatter.withFunction((TextEditingValue oldValue, TextEditingValue newValue) => (double.tryParse(newValue.text) ?? 0) <= _maximumAmountToPay ? newValue : oldValue),
                                     CurrencyFormatter(),
                                   ],
                                   decoration: InputDecoration(

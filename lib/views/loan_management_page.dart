@@ -10,7 +10,9 @@ import '../components/confirm_dialog.dart';
 import '../components/loan_dialog.dart';
 import '../controllers/loan_controller.dart';
 import '../controllers/loan_tracker_controller.dart';
+import '../controllers/member_controller.dart';
 import '../controllers/setting_controller.dart';
+import '../controllers/summary_controller.dart';
 import '../models/loan_model.dart';
 import '../models/loan_tracker_model.dart';
 import '../models/setting_model.dart';
@@ -27,7 +29,7 @@ class LoanManagementPage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<LoanManagementPage> {
   bool _isLoading = true;
   LoanSortType _selectedSortType = LoanSortType.name;
-  SortDirection _selectedSortDirection = SortDirection.ascending;
+  LoanSortDirection _selectedSortDirection = LoanSortDirection.ascending;
   late final ScrollController _scrollController;
 
   @override
@@ -36,9 +38,9 @@ class _HomePageState extends ConsumerState<LoanManagementPage> {
     _scrollController = ScrollController();
     WidgetsBinding.instance.addPostFrameCallback((Duration _) async {
       try {
-        await ref.read(loanControllerProvider.notifier).init();
+        // await ref.read(loanControllerProvider.notifier).init();
         ref.read(loanControllerProvider.notifier).setSort(_selectedSortType, _selectedSortDirection);
-        await ref.read(settingControllerProvider.notifier).init();
+        // await ref.read(settingControllerProvider.notifier).init();
         if (ref.read(settingControllerProvider) == null && mounted) {
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
@@ -48,7 +50,9 @@ class _HomePageState extends ConsumerState<LoanManagementPage> {
             ),
           );
         }
-        await ref.read(loanTrackerControllerProvider.notifier).init();
+        // await ref.read(loanTrackerControllerProvider.notifier).init();
+        // await ref.read(memberControllerProvider.notifier).init();
+        // await ref.read(summaryControllerProvider.notifier).init();
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -125,10 +129,10 @@ class _HomePageState extends ConsumerState<LoanManagementPage> {
             const SizedBox(width: 16),
             Text('Direction: ', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(width: 8),
-            DropdownButton<SortDirection>(
+            DropdownButton<LoanSortDirection>(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               value: _selectedSortDirection,
-              onChanged: (SortDirection? value) {
+              onChanged: (LoanSortDirection? value) {
                 if (value != null) {
                   setState(() => _selectedSortDirection = value);
                   ref.read(loanControllerProvider.notifier).setSort(_selectedSortType, _selectedSortDirection);
@@ -136,12 +140,12 @@ class _HomePageState extends ConsumerState<LoanManagementPage> {
                 }
               },
               onTap: () => FocusScope.of(context).requestFocus(FocusNode()),
-              items: SortDirection.values.map((SortDirection dir) {
+              items: LoanSortDirection.values.map((LoanSortDirection dir) {
                 final String label = switch (dir) {
-                  SortDirection.ascending => 'Ascending',
-                  SortDirection.descending => 'Descending',
+                  LoanSortDirection.ascending => 'Ascending',
+                  LoanSortDirection.descending => 'Descending',
                 };
-                return DropdownMenuItem<SortDirection>(value: dir, child: Text(label));
+                return DropdownMenuItem<LoanSortDirection>(value: dir, child: Text(label));
               }).toList(),
             ),
           ],
@@ -192,9 +196,9 @@ class _HomePageState extends ConsumerState<LoanManagementPage> {
           children: <Widget>[
             Text('Direction: ', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(width: 8),
-            DropdownButton<SortDirection>(
+            DropdownButton<LoanSortDirection>(
               value: _selectedSortDirection,
-              onChanged: (SortDirection? value) {
+              onChanged: (LoanSortDirection? value) {
                 if (value != null) {
                   setState(() => _selectedSortDirection = value);
                   ref.read(loanControllerProvider.notifier).setSort(_selectedSortType, _selectedSortDirection);
@@ -202,12 +206,12 @@ class _HomePageState extends ConsumerState<LoanManagementPage> {
                 }
               },
               onTap: () => FocusScope.of(context).requestFocus(FocusNode()),
-              items: SortDirection.values.map((SortDirection dir) {
+              items: LoanSortDirection.values.map((LoanSortDirection dir) {
                 final String label = switch (dir) {
-                  SortDirection.ascending => 'Ascending',
-                  SortDirection.descending => 'Descending',
+                  LoanSortDirection.ascending => 'Ascending',
+                  LoanSortDirection.descending => 'Descending',
                 };
-                return DropdownMenuItem<SortDirection>(
+                return DropdownMenuItem<LoanSortDirection>(
                   value: dir,
                   child: Padding(padding: const EdgeInsets.symmetric(horizontal: 4.0), child: Text(label)),
                 );

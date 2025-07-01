@@ -4,11 +4,11 @@ import 'package:sinking_fund_manager/models/loan_model.dart';
 
 enum LoanSortType { name, loanAmount, loanDateTime, numberOfGives, paymentStartDate, totalAmountToPay, payablePerGive }
 
-enum SortDirection { ascending, descending }
+enum LoanSortDirection { ascending, descending }
 
 class LoanController extends Notifier<List<LoanModel>> {
   LoanSortType _sortType = LoanSortType.name;
-  SortDirection _sortDirection = SortDirection.ascending;
+  LoanSortDirection _sortDirection = LoanSortDirection.ascending;
 
   @override
   List<LoanModel> build() => <LoanModel>[];
@@ -26,7 +26,7 @@ class LoanController extends Notifier<List<LoanModel>> {
     state = state.where((LoanModel m) => m.id != loanToDelete.id).toList();
   }
 
-  void setSort(LoanSortType type, SortDirection direction) {
+  void setSort(LoanSortType type, LoanSortDirection direction) {
     _sortType = type;
     _sortDirection = direction;
     _sortLoans();
@@ -61,7 +61,7 @@ class LoanController extends Notifier<List<LoanModel>> {
           break;
       }
 
-      return _sortDirection == SortDirection.ascending ? compare : -compare;
+      return _sortDirection == LoanSortDirection.ascending ? compare : -compare;
     });
   }
 }

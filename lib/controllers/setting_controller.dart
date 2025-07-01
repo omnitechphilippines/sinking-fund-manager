@@ -14,22 +14,11 @@ class SettingController extends Notifier<SettingModel?> {
     state = setting;
   }
 
-  void addSetting(SettingModel newSetting) {
-    // final bool isSuccess = await _api.addSetting(newSetting);
-    // if(isSuccess) state = await _api.getSetting();
-    state = newSetting;
-  }
-
-  void editSetting(SettingModel updatedSetting) {
-    // final SettingModel edited = await _api.editSetting(updatedSetting);
-    state = updatedSetting;
+  void editSetting(SettingModel editSetting) {
+    state = editSetting;
   }
 
   void deleteSetting() {
-    // final bool success = await _api.deleteSettingById(settingToDelete.id);
-    // if (success) {
-    //   state = null;
-    // }
     state = null;
   }
 }

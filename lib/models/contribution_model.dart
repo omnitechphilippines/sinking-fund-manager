@@ -30,6 +30,7 @@ class ContributionModel {
   Map<String, dynamic> toJson() => <String, dynamic>{
     'id': id,
     'member_id': memberId,
+    'member_name': memberName,
     'contribution_date': contributionDate.toIso8601String(),
     'contribution_amount': contributionAmount,
     'payment_date_time': paymentDateTime.toIso8601String(),

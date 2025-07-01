@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sinking_fund_manager/components/member_dialog.dart';
+import 'package:sinking_fund_manager/controllers/summary_controller.dart';
 
 import '../components/confirm_dialog.dart';
 import '../components/contribution_dialog.dart';
@@ -11,6 +12,7 @@ import '../models/member_model.dart';
 import '../models/setting_model.dart';
 import '../controllers/contribution_controller.dart';
 import '../models/contribution_model.dart';
+import '../models/summary_model.dart';
 
 class MemberItem extends ConsumerStatefulWidget {
   final MemberModel member;
@@ -72,13 +74,14 @@ class _MemberItemState extends ConsumerState<MemberItem> {
                                   if (result != null && result.isNotEmpty) {
                                     final ContributionModel newContribution = result.first;
                                     ref.read(contributionControllerProvider.notifier).addContribution(newContribution);
+                                    ref.read(summaryControllerProvider.notifier).editSummary(totalContribution: result[1],totalCashOnHand: result[2]);
                                     if (context.mounted) {
                                       final String dateTime = newContribution.formattedPaymentDateTime;
                                       ScaffoldMessenger.of(context).hideCurrentSnackBar();
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         SnackBar(
                                           backgroundColor: Colors.green,
-                                          content: Text('Contribution for member "${newContribution.memberId}" on $dateTime was successfully added!', style: const TextStyle(color: Colors.white)),
+                                          content: Text('Contribution for member "${newContribution.memberName}" on $dateTime was successfully added!', style: const TextStyle(color: Colors.white)),
                                         ),
                                       );
                                     }

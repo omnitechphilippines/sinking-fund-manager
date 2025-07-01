@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sinking_fund_manager/controllers/member_controller.dart';
+import 'package:sinking_fund_manager/controllers/summary_controller.dart';
 import 'package:sinking_fund_manager/models/loan_model.dart';
 import 'package:sinking_fund_manager/models/loan_tracker_model.dart';
 import 'package:sinking_fund_manager/utils/currency_formatter.dart';
@@ -46,22 +47,20 @@ class _LoanDialogState extends ConsumerState<LoanDialog> {
   String _selectedMember = '';
   double _interestAmount = 0, _numberOfMonths = 0, _totalAmountToPay = 0;
   int _numberOfGives = 0, _weekNumber = 0;
-  List<LoanTrackerModel> _loanTrackers = <LoanTrackerModel>[];
 
   @override
   void initState() {
     super.initState();
     if (widget.loan != null) {
-      _loanTrackers = ref.read(loanTrackerControllerProvider);
       _nameController.text = widget.loan!.name;
       _loanAmountController.text = widget.loan!.formattedLoanAmount;
       _loanDateTimeController.text = widget.loan!.formattedLoanDateTime;
       _numberOfGivesController.text = widget.loan!.numberOfGives.toString();
-      _giveNumberController.text = _loanTrackers.isNotEmpty ? _loanTrackers[0].giveNumber.toString() : '1';
-      _paymentDueDateController.text = widget.loan!.formattedPaymentStartDate;
+      _giveNumberController.text = widget.loan!.currentGiveNumber.toString();
+      _paymentDueDateController.text = widget.loan!.formattedCurrentPaymentDueDate;
       _giveAmountController.text = widget.loan!.formattedCurrentGiveAmount;
       _remainingLoanController.text = widget.loan!.formattedCurrentRemainingAmountToPay;
-      _loanAmountAlreadyPaidController.text = _loanTrackers.isNotEmpty ? _loanTrackers[0].formattedGiveAmount : numberFormatter.format(0);
+      _loanAmountAlreadyPaidController.text = numberFormatter.format(widget.loan!.currentTotalAmountToPay - widget.loan!.currentRemainingAmountToPay);
     } else {
       final DateTime now = DateTime.now();
       _loanDateTimeController.text = dateTimeFormatter.format(now);
@@ -287,14 +286,17 @@ class _LoanDialogState extends ConsumerState<LoanDialog> {
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 16),
                               child: TextField(
-                                keyboardType: TextInputType.number,
-                                inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly, CurrencyFormatter()],
+                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                inputFormatters: <TextInputFormatter>[
+                                  TextInputFormatter.withFunction((TextEditingValue oldValue, TextEditingValue newValue) => (double.tryParse(newValue.text) ?? 0) <= ref.read(summaryControllerProvider)!.totalCashOnHand ? newValue : oldValue),
+                                  CurrencyFormatter(),
+                                ],
                                 controller: _loanAmountController,
                                 focusNode: _loanAmountControllerFocusNode,
                                 decoration: InputDecoration(
                                   prefixText: ' ₱ ',
                                   prefixStyle: TextStyle(color: _isError && _loanAmountController.text.isEmpty ? const Color(0xFFD39992) : Theme.of(context).textTheme.titleMedium?.color, fontSize: Theme.of(context).textTheme.titleLarge?.fontSize),
-                                  labelText: 'Loan Amount (remaining cash: ₱ )',
+                                  labelText: 'Loan Amount (remaining cash: ₱ ${ref.read(summaryControllerProvider)?.formattedTotalCashOnHand})',
                                   errorText: _isError && _loanAmountController.text.isEmpty ? 'Required' : null,
                                 ),
                                 style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color),
@@ -595,7 +597,7 @@ class _LoanDialogState extends ConsumerState<LoanDialog> {
                                       decoration: InputDecoration(
                                         prefixText: ' ₱ ',
                                         prefixStyle: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color?.withValues(alpha: 0.5), fontSize: Theme.of(context).textTheme.titleLarge?.fontSize),
-                                        labelText: 'Remaining Loan (${_loanTrackers.isNotEmpty ? _loanTrackers[0].giveNumber : _numberOfGivesController.text})',
+                                        labelText: 'Remaining Loan (${(widget.loan!.numberOfGives - widget.loan!.currentGiveNumber) + 1})',
                                       ),
                                       style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color?.withValues(alpha: 0.5)),
                                       readOnly: true,
@@ -649,7 +651,7 @@ class _LoanDialogState extends ConsumerState<LoanDialog> {
                                           text: TextSpan(
                                             style: Theme.of(context).textTheme.titleLarge,
                                             children: <InlineSpan>[
-                                              const TextSpan(text: 'Total contribution: '),
+                                              const TextSpan(text: 'Total loan: '),
                                               TextSpan(
                                                 text: '₱ ${numberFormatter.format(totalLoanTrackerById)}',
                                                 style: const TextStyle(color: Colors.blue),

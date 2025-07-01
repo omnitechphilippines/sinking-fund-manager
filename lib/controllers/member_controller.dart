@@ -5,11 +5,11 @@ import '../api_services/members_api_service.dart';
 
 enum MemberSortType { name, numberOfHeads }
 
-enum SortDirection { ascending, descending }
+enum MemberSortDirection { ascending, descending }
 
 class MemberController extends Notifier<List<MemberModel>> {
   MemberSortType _sortType = MemberSortType.name;
-  SortDirection _sortDirection = SortDirection.ascending;
+  MemberSortDirection _sortDirection = MemberSortDirection.ascending;
 
   @override
   List<MemberModel> build() => <MemberModel>[];
@@ -27,7 +27,7 @@ class MemberController extends Notifier<List<MemberModel>> {
     state = state.where((MemberModel m) => m.id != memberToDelete.id).toList();
   }
 
-  void setSort(MemberSortType type, SortDirection direction) {
+  void setSort(MemberSortType type, MemberSortDirection direction) {
     _sortType = type;
     _sortDirection = direction;
     _sortMembers();
@@ -46,7 +46,7 @@ class MemberController extends Notifier<List<MemberModel>> {
           compare = a.numberOfHeads.compareTo(b.numberOfHeads);
           break;
       }
-      return _sortDirection == SortDirection.ascending ? compare : -compare;
+      return _sortDirection == MemberSortDirection.ascending ? compare : -compare;
     });
   }
 }

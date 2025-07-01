@@ -118,7 +118,7 @@ class _SettingDialogState extends ConsumerState<SettingDialog> {
       );
       final bool response = ref.read(settingControllerProvider) != null ? await SettingsApiService().updateSetting(newSetting) : await SettingsApiService().addSetting(newSetting);
       if (response && mounted) {
-        ref.read(settingControllerProvider.notifier).addSetting(newSetting);
+        ref.read(settingControllerProvider.notifier).editSetting(newSetting);
         Navigator.of(context).pop(<bool>[true]);
       } else {
         if (mounted) {

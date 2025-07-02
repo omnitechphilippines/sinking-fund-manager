@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+import '../app_initializer.dart';
 import '../widgets/buttons/custom_button.dart';
 import '../widgets/text_fields/custom_text_field.dart';
 import '../controllers/auth_controller.dart';
@@ -50,13 +51,17 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   Widget build(BuildContext context) {
     ref.listen<AuthModel>(authControllerProvider, (AuthModel? previous, AuthModel next) {
       if (next.status == AuthStatus.loading) {
-        showDialog(context: context, barrierDismissible: false, builder: (_) => const Center(child: CircularProgressIndicator()));
+        showDialog(context: context, barrierDismissible: false, builder: (BuildContext _) => const Center(child: CircularProgressIndicator()));
       } else {
         if (Navigator.canPop(context)) Navigator.pop(context);
       }
 
       if (next.status == AuthStatus.success) {
-        context.go('/member-management');
+        // context.go('/member-management');
+        Future<dynamic>.microtask(() async {
+          await loadAllData(ref);
+          if(context.mounted) context.go('/member-management');
+        });
       }
 
       if (next.status == AuthStatus.failure) {

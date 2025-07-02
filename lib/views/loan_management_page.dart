@@ -10,9 +10,7 @@ import '../components/confirm_dialog.dart';
 import '../components/loan_dialog.dart';
 import '../controllers/loan_controller.dart';
 import '../controllers/loan_tracker_controller.dart';
-import '../controllers/member_controller.dart';
 import '../controllers/setting_controller.dart';
-import '../controllers/summary_controller.dart';
 import '../models/loan_model.dart';
 import '../models/loan_tracker_model.dart';
 import '../models/setting_model.dart';
@@ -38,9 +36,7 @@ class _HomePageState extends ConsumerState<LoanManagementPage> {
     _scrollController = ScrollController();
     WidgetsBinding.instance.addPostFrameCallback((Duration _) async {
       try {
-        // await ref.read(loanControllerProvider.notifier).init();
         ref.read(loanControllerProvider.notifier).setSort(_selectedSortType, _selectedSortDirection);
-        // await ref.read(settingControllerProvider.notifier).init();
         if (ref.read(settingControllerProvider) == null && mounted) {
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
@@ -50,9 +46,6 @@ class _HomePageState extends ConsumerState<LoanManagementPage> {
             ),
           );
         }
-        // await ref.read(loanTrackerControllerProvider.notifier).init();
-        // await ref.read(memberControllerProvider.notifier).init();
-        // await ref.read(summaryControllerProvider.notifier).init();
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).hideCurrentSnackBar();

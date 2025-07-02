@@ -9,10 +9,8 @@ import '../../../../components/side_nav.dart';
 import '../../../../components/custom_app_bar.dart';
 import '../../../components/confirm_dialog.dart';
 import '../../../components/member_dialog.dart';
-import '../controllers/contribution_controller.dart';
 import '../controllers/member_controller.dart';
 import '../api_services/members_api_service.dart';
-import '../../../models/contribution_model.dart';
 import '../controllers/setting_controller.dart';
 import '../controllers/summary_controller.dart';
 import '../models/member_model.dart';
@@ -38,9 +36,7 @@ class _MemberManagementPageState extends ConsumerState<MemberManagementPage> {
     _scrollController = ScrollController();
     WidgetsBinding.instance.addPostFrameCallback((Duration _) async {
       try {
-        // await ref.read(memberControllerProvider.notifier).init();
         ref.read(memberControllerProvider.notifier).setSort(_selectedSortType, _selectedSortDirection);
-        // await ref.read(settingControllerProvider.notifier).init();
         if (ref.read(settingControllerProvider) == null && mounted) {
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
@@ -50,8 +46,6 @@ class _MemberManagementPageState extends ConsumerState<MemberManagementPage> {
             ),
           );
         }
-        // await ref.read(contributionControllerProvider.notifier).init();
-        // await ref.read(summaryControllerProvider.notifier).init();
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).hideCurrentSnackBar();

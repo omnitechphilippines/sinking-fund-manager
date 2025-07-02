@@ -12,7 +12,6 @@ import '../models/member_model.dart';
 import '../models/setting_model.dart';
 import '../controllers/contribution_controller.dart';
 import '../models/contribution_model.dart';
-import '../models/summary_model.dart';
 
 class MemberItem extends ConsumerStatefulWidget {
   final MemberModel member;

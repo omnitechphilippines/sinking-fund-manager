@@ -11,9 +11,11 @@ import '../components/loan_dialog.dart';
 import '../controllers/loan_controller.dart';
 import '../controllers/loan_tracker_controller.dart';
 import '../controllers/setting_controller.dart';
+import '../controllers/summary_controller.dart';
 import '../models/loan_model.dart';
 import '../models/loan_tracker_model.dart';
 import '../models/setting_model.dart';
+import '../models/summary_model.dart';
 import '../utils/formatters.dart';
 import 'loan_item.dart';
 
@@ -220,9 +222,7 @@ class _HomePageState extends ConsumerState<LoanManagementPage> {
   @override
   Widget build(BuildContext context) {
     final List<LoanModel> loans = ref.watch(loanControllerProvider);
-    final double totalUnpaidLoans = loans.fold(0.0, (double sum, LoanModel loan) => sum + loan.currentRemainingAmountToPay);
-    final List<LoanTrackerModel> loanTrackers = ref.watch(loanTrackerControllerProvider);
-    final double totalPaidLoans = loanTrackers.fold(0.0, (double sum, LoanTrackerModel loanTracker) => sum + (loanTracker.giveAmount));
+    final SummaryModel? summary = ref.watch(summaryControllerProvider);
     final SettingModel? setting = ref.watch(settingControllerProvider);
     return Scaffold(
       floatingActionButton: FloatingActionButton(
@@ -309,7 +309,7 @@ class _HomePageState extends ConsumerState<LoanManagementPage> {
                                             children: <InlineSpan>[
                                               const TextSpan(text: 'Total paid loan: '),
                                               TextSpan(
-                                                text: '₱ ${numberFormatter.format(totalPaidLoans)}',
+                                                text: '₱ ${numberFormatter.format(summary?.totalPaidLoan)}',
                                                 style: const TextStyle(color: Colors.blue),
                                               ),
                                             ],
@@ -321,7 +321,19 @@ class _HomePageState extends ConsumerState<LoanManagementPage> {
                                             children: <InlineSpan>[
                                               const TextSpan(text: 'Total unpaid loan: '),
                                               TextSpan(
-                                                text: '₱ ${numberFormatter.format(totalUnpaidLoans)}',
+                                                text: '₱ ${numberFormatter.format(summary?.totalUnpaidLoan)}',
+                                                style: const TextStyle(color: Colors.blue),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        RichText(
+                                          text: TextSpan(
+                                            style: Theme.of(context).textTheme.titleLarge,
+                                            children: <InlineSpan>[
+                                              const TextSpan(text: 'Total loan: '),
+                                              TextSpan(
+                                                text: '₱ ${numberFormatter.format(summary?.totalLoan)}',
                                                 style: const TextStyle(color: Colors.blue),
                                               ),
                                             ],

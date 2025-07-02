@@ -20,9 +20,14 @@ class LoanTrackersApiService {
   }
 
   /// Add a new loan tracker
-  Future<bool> addLoanTracker(LoanTrackerModel loanTracker, String? proofImageName) async {
+  Future<bool> addLoanTracker(LoanTrackerModel loanTracker, String? proofImageName, int currentGiveNumber, int currentGiveInterest, double currentGiveAmount, double currentRemainingAmountToPay, DateTime currentPaymentDueDate) async {
     final Map<String, dynamic> body = loanTracker.toJson();
     body.remove('proof');
+    body['current_give_number'] = currentGiveNumber.toString();
+    body['current_give_interest'] = currentGiveInterest.toString();
+    body['current_give_amount'] = currentGiveAmount.toString();
+    body['current_remaining_amount_to_pay'] = currentRemainingAmountToPay.toString();
+    body['current_payment_due_date'] = currentPaymentDueDate.toIso8601String();
     final http.MultipartRequest request = http.MultipartRequest('POST', Uri.parse(baseUrl));
     request.fields.addAll(body.map((String k, dynamic v) => MapEntry<String, String>(k, v.toString())));
     if (loanTracker.proof != null && proofImageName != null) {
@@ -33,7 +38,7 @@ class LoanTrackersApiService {
     }
     final http.StreamedResponse response = await request.send();
     if (response.statusCode == 200 || response.statusCode == 201) {
-      return jsonDecode(await response.stream.bytesToString())['affectedRows'] == 1 ? true : false;
+      return jsonDecode(await response.stream.bytesToString())['affectedRows'] == 3 ? true : false;
     } else {
       throw Exception('Add Loan Tracker failed: ${response.statusCode}');
     }

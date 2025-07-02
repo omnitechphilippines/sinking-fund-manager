@@ -11,6 +11,7 @@ import 'package:uuid/uuid.dart';
 import '../api_services/loans_api_service.dart';
 import '../controllers/loan_tracker_controller.dart';
 import '../models/member_model.dart';
+import '../models/summary_model.dart';
 import '../utils/formatters.dart';
 import '../widgets/buttons/custom_icon_button.dart';
 
@@ -113,6 +114,7 @@ class _LoanDialogState extends ConsumerState<LoanDialog> {
     _isError = false;
     setState(() => _isLoading = true);
     try {
+      final SummaryModel? summary = ref.read(summaryControllerProvider);
       final String id = const Uuid().v4();
       final bool response = await LoansApiService().addLoan(
         LoanModel(
@@ -137,6 +139,14 @@ class _LoanDialogState extends ConsumerState<LoanDialog> {
       );
       if (response) {
         final LoanModel newLoan = await LoansApiService().getLoanById(id);
+        ref
+            .read(summaryControllerProvider.notifier)
+            .editSummary(
+              totalLoan: summary!.totalLoan + newLoan.loanAmount,
+              totalCashOnHand: summary.totalCashOnHand - newLoan.loanAmount,
+              totalUnpaidLoan: summary.totalUnpaidLoan + newLoan.loanAmount,
+              totalInterestAmount: summary.totalInterestAmount + (_numberOfMonths * _interestAmount),
+            );
         if (mounted) Navigator.of(context).pop(<LoanModel>[newLoan]);
       } else {
         if (mounted) {

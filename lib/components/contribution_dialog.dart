@@ -121,7 +121,8 @@ class _ContributionDialogState extends ConsumerState<ContributionDialog> {
       );
       if (response) {
         final ContributionModel newContribution = await ContributionsApiService().getContributionById(id);
-        if (mounted) Navigator.of(context).pop(<Object>[newContribution, summary!.totalContribution + newContribution.contributionAmount, summary.totalCashOnHand + newContribution.contributionAmount]);
+        ref.read(summaryControllerProvider.notifier).editSummary(totalContribution: summary!.totalContribution + newContribution.contributionAmount,totalCashOnHand: summary.totalCashOnHand + newContribution.contributionAmount);
+        if (mounted) Navigator.of(context).pop(<ContributionModel>[newContribution]);
       } else {
         if (mounted) {
           final String dateTime = dateTimeFormatter.format(dateTimeFormatter.parse(_paymentDateTimeController.text));

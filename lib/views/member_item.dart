@@ -73,7 +73,6 @@ class _MemberItemState extends ConsumerState<MemberItem> {
                                   if (result != null && result.isNotEmpty) {
                                     final ContributionModel newContribution = result.first;
                                     ref.read(contributionControllerProvider.notifier).addContribution(newContribution);
-                                    ref.read(summaryControllerProvider.notifier).editSummary(totalContribution: result[1],totalCashOnHand: result[2]);
                                     if (context.mounted) {
                                       final String dateTime = newContribution.formattedPaymentDateTime;
                                       ScaffoldMessenger.of(context).hideCurrentSnackBar();

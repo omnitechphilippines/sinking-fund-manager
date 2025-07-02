@@ -3,11 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sinking_fund_manager/api_services/loan_trackers_api_service.dart';
+import 'package:sinking_fund_manager/controllers/summary_controller.dart';
 import 'package:sinking_fund_manager/models/loan_model.dart';
 import 'package:uuid/uuid.dart';
 
-import '../api_services/loans_api_service.dart';
 import '../models/loan_tracker_model.dart';
+import '../models/summary_model.dart';
 import '../utils/currency_formatter.dart';
 import '../utils/formatters.dart';
 import '../widgets/buttons/custom_icon_button.dart';
@@ -83,8 +84,35 @@ class _LoanTrackerDialogState extends ConsumerState<LoanTrackerDialog> {
     _isError = false;
     setState(() => _isLoading = true);
     try {
+      final SummaryModel? summary = ref.read(summaryControllerProvider);
       final String id = const Uuid().v4();
       final bool isFullyPaid = double.parse(_giveAmountController.text) == widget.loan.currentGiveAmount;
+      final int overdue = DateTime.now().difference(widget.loan.currentPaymentDueDate).inDays;
+      DateTime newDueDate;
+      if (overdue > 0) {
+        final DateTime now = DateTime.now();
+        final int weekNumber = ((now.day - 1) ~/ 7) + 1;
+        final int lastDayOfMonth = DateTime(now.year, now.month + 1, 0).day;
+        if (weekNumber == 1) {
+          newDueDate = DateTime(now.year, now.month, 15);
+        } else if (weekNumber == 2 || weekNumber == 3) {
+          newDueDate = DateTime(now.year, now.month, lastDayOfMonth);
+        } else {
+          newDueDate = DateTime(now.year, now.month + 1, 15);
+        }
+      } else {
+        final DateTime oldDueDate = widget.loan.currentPaymentDueDate;
+        final int lastDayOfMonth = DateTime(oldDueDate.year, oldDueDate.month + 1, 0).day;
+        final bool is15 = oldDueDate.day == 15;
+        newDueDate = is15 ? DateTime(oldDueDate.year, oldDueDate.month, lastDayOfMonth) : DateTime(oldDueDate.year, oldDueDate.month + 1, 15);
+      }
+      final LoanModel updatedLoan = widget.loan.copyWith(
+        currentGiveNumber: isFullyPaid && widget.loan.currentGiveNumber != widget.loan.numberOfGives ? widget.loan.currentGiveNumber + 1 : widget.loan.currentGiveNumber,
+        currentGiveInterest: 0,
+        currentGiveAmount: isFullyPaid ? widget.loan.payablePerGive : widget.loan.currentGiveAmount - double.parse(_giveAmountController.text),
+        currentRemainingAmountToPay: widget.loan.currentRemainingAmountToPay - double.parse(_giveAmountController.text),
+        currentPaymentDueDate: newDueDate,
+      );
       final LoanTrackerModel newLoanTracker = LoanTrackerModel(
         id: id,
         loanId: widget.loan.id,
@@ -99,36 +127,18 @@ class _LoanTrackerDialogState extends ConsumerState<LoanTrackerDialog> {
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
-      final bool response = await LoanTrackersApiService().addLoanTracker(newLoanTracker, _proofImageName);
-      if (response) {
-        final int overdue = DateTime.now().difference(widget.loan.currentPaymentDueDate).inDays;
-        DateTime newDueDate;
-        if (overdue > 0) {
-          final DateTime now = DateTime.now();
-          final int weekNumber = ((now.day - 1) ~/ 7) + 1;
-          final int lastDayOfMonth = DateTime(now.year, now.month + 1, 0).day;
-          if (weekNumber == 1) {
-            newDueDate = DateTime(now.year, now.month, 15);
-          } else if (weekNumber == 2 || weekNumber == 3) {
-            newDueDate = DateTime(now.year, now.month, lastDayOfMonth);
-          } else {
-            newDueDate = DateTime(now.year, now.month + 1, 15);
-          }
-        } else {
-          final DateTime oldDueDate = widget.loan.currentPaymentDueDate;
-          final int lastDayOfMonth = DateTime(oldDueDate.year, oldDueDate.month + 1, 0).day;
-          final bool is15 = oldDueDate.day == 15;
-          newDueDate = is15 ? DateTime(oldDueDate.year, oldDueDate.month, lastDayOfMonth) : DateTime(oldDueDate.year, oldDueDate.month + 1, 15);
-        }
-        final LoanModel updatedLoan = widget.loan.copyWith(
-          currentGiveNumber: isFullyPaid && widget.loan.currentGiveNumber != widget.loan.numberOfGives ? widget.loan.currentGiveNumber + 1 : widget.loan.currentGiveNumber,
-          currentGiveInterest: 0,
-          currentGiveAmount: isFullyPaid ? widget.loan.payablePerGive : widget.loan.currentGiveAmount - double.parse(_giveAmountController.text),
-          currentRemainingAmountToPay: widget.loan.currentRemainingAmountToPay - double.parse(_giveAmountController.text),
-          currentPaymentDueDate: newDueDate,
-        );
-        final bool response2 = await LoansApiService().updateLoan(updatedLoan);
-        if (response2 && mounted) Navigator.of(context).pop(<Object>[newLoanTracker, updatedLoan]);
+      final bool response = await LoanTrackersApiService().addLoanTracker(
+        newLoanTracker,
+        _proofImageName,
+        updatedLoan.currentGiveNumber,
+        updatedLoan.currentGiveInterest,
+        updatedLoan.currentGiveAmount,
+        updatedLoan.currentRemainingAmountToPay,
+        updatedLoan.currentPaymentDueDate,
+      );
+      if (response && mounted) {
+        ref.read(summaryControllerProvider.notifier).editSummary(totalUnpaidLoan: summary!.totalUnpaidLoan - newLoanTracker.giveAmount,totalPaidLoan: summary.totalPaidLoan + newLoanTracker.giveAmount, totalCashOnHand: summary.totalCashOnHand + newLoanTracker.giveAmount);
+        Navigator.of(context).pop(<Object>[newLoanTracker, updatedLoan]);
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).hideCurrentSnackBar();

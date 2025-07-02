@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sinking_fund_manager/components/member_dialog.dart';
-import 'package:sinking_fund_manager/controllers/summary_controller.dart';
 
 import '../components/confirm_dialog.dart';
 import '../components/contribution_dialog.dart';

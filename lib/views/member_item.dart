@@ -11,6 +11,7 @@ import '../models/member_model.dart';
 import '../models/setting_model.dart';
 import '../controllers/contribution_controller.dart';
 import '../models/contribution_model.dart';
+import '../utils/formatters.dart';
 
 class MemberItem extends ConsumerStatefulWidget {
   final MemberModel member;
@@ -23,6 +24,36 @@ class MemberItem extends ConsumerStatefulWidget {
 
 class _MemberItemState extends ConsumerState<MemberItem> {
   bool _isLoading = false;
+  late DateTime _contributionDate;
+  double _maximumAmountToPay = 0;
+  String _hintText = '';
+
+  @override
+  void initState() {
+    super.initState();
+    final List<ContributionModel> allContributions = ref.read(contributionControllerProvider);
+    final List<ContributionModel> contributionsById = allContributions.where((ContributionModel c) => c.memberId == widget.member.id).toList();
+    contributionsById.sort((ContributionModel a, ContributionModel b) => b.contributionDate.compareTo(a.contributionDate));
+    if (contributionsById.isNotEmpty) {
+      _contributionDate = contributionsById[0].contributionDate;
+      final int lastDayOfMonth = DateTime(_contributionDate.year, _contributionDate.month + 1, 0).day;
+      final bool is15 = _contributionDate.day == 15;
+      final List<ContributionModel> contributionsByIdAndDate = contributionsById.where((ContributionModel c) => c.contributionDate == _contributionDate).toList();
+      final double totalContributionByDate = contributionsByIdAndDate.fold<double>(0.0, (double sum, ContributionModel contribution) => sum + contribution.contributionAmount);
+      if (totalContributionByDate == widget.member.contributionAmount) {
+        _contributionDate = is15 ? DateTime(_contributionDate.year, _contributionDate.month, lastDayOfMonth) : DateTime(_contributionDate.year, _contributionDate.month + 1, 15);
+        _hintText = 'not yet paid';
+        _maximumAmountToPay = totalContributionByDate;
+      } else {
+        _hintText = 'paid ₱${numberFormatter.format(totalContributionByDate)}';
+        _maximumAmountToPay = widget.member.contributionAmount - totalContributionByDate;
+      }
+    } else {
+      _contributionDate = ref.read(settingControllerProvider)!.startingDate;
+      _hintText = 'not yet paid';
+      _maximumAmountToPay = widget.member.contributionAmount;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,12 +82,13 @@ class _MemberItemState extends ConsumerState<MemberItem> {
                         Text('₱ ${widget.member.formattedContributionAmount} (${widget.member.numberOfHeads})', style: Theme.of(context).textTheme.titleMedium),
                       ],
                     ),
-                    // RichText(
-                    //   text: TextSpan(
-                    //     style: Theme.of(context).textTheme.titleLarge,
-                    //     children: const <InlineSpan>[TextSpan(text: 'Due Date: ')],
-                    //   ),
-                    // ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text('Due Date: ', style: Theme.of(context).textTheme.titleLarge),
+                        Text(dateFormatter.format(_contributionDate), style: TextStyle(color: DateTime.now().difference(_contributionDate).inDays > 0 ? Colors.red : Colors.blue, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
                     Row(
                       spacing: 4,
                       children: <Widget>[
@@ -67,7 +99,14 @@ class _MemberItemState extends ConsumerState<MemberItem> {
                                   final List<dynamic>? result = await showDialog(
                                     barrierDismissible: false,
                                     context: context,
-                                    builder: (BuildContext _) => ContributionDialog(id: widget.member.id, name: widget.member.name, contributionAmount: widget.member.contributionAmount),
+                                    builder: (BuildContext _) => ContributionDialog(
+                                      id: widget.member.id,
+                                      name: widget.member.name,
+                                      contributionAmount: widget.member.contributionAmount,
+                                      contributionDate: _contributionDate,
+                                      maximumAmountToPay: _maximumAmountToPay,
+                                      hintText: _hintText,
+                                    ),
                                   );
                                   if (result != null && result.isNotEmpty) {
                                     final ContributionModel newContribution = result.first;

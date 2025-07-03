@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sinking_fund_manager/api_services/loan_trackers_api_service.dart';
+import 'package:sinking_fund_manager/controllers/setting_controller.dart';
 import 'package:sinking_fund_manager/controllers/summary_controller.dart';
 import 'package:sinking_fund_manager/models/loan_model.dart';
 import 'package:uuid/uuid.dart';
@@ -314,7 +315,7 @@ class _LoanTrackerDialogState extends ConsumerState<LoanTrackerDialog> {
                                     Expanded(
                                       child: TextField(
                                         controller: _numberOfGivesController,
-                                        decoration: const InputDecoration(labelText: 'No. Of Gives', prefix: SizedBox(width: 4)),
+                                        decoration: InputDecoration(labelText: 'No. Of Gives (Max. ${ref.read(settingControllerProvider)?.maxNumberOfGives})', prefix: const SizedBox(width: 4)),
                                         style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color?.withValues(alpha: 0.5)),
                                         readOnly: true,
                                       ),

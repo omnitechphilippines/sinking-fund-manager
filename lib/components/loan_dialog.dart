@@ -10,6 +10,7 @@ import 'package:uuid/uuid.dart';
 
 import '../api_services/loans_api_service.dart';
 import '../controllers/loan_tracker_controller.dart';
+import '../controllers/setting_controller.dart';
 import '../models/member_model.dart';
 import '../models/summary_model.dart';
 import '../utils/formatters.dart';
@@ -186,19 +187,18 @@ class _LoanDialogState extends ConsumerState<LoanDialog> {
       if (pickedTime != null) {
         final DateTime fullDateTime = DateTime(pickedDate.year, pickedDate.month, pickedDate.day, pickedTime.hour, pickedTime.minute);
         _loanDateTimeController.text = dateTimeFormatter.format(fullDateTime);
+        _weekNumber = ((pickedDate.day - 1) ~/ 7) + 1;
+        final int lastDayOfMonth = DateTime(pickedDate.year, pickedDate.month + 1, 0).day;
+        if (_weekNumber == 1) {
+          _paymentStartDateController.text = dateFormatter.format(DateTime(pickedDate.year, pickedDate.month, 15));
+        } else if (_weekNumber == 2 || _weekNumber == 3) {
+          _paymentStartDateController.text = dateFormatter.format(DateTime(pickedDate.year, pickedDate.month, lastDayOfMonth));
+        } else {
+          _paymentStartDateController.text = dateFormatter.format(DateTime(pickedDate.year, pickedDate.month + 1, 15));
+        }
       }
     }
     appendDecimal(_loanAmountController);
-    final DateTime date = pickedDate!;
-    _weekNumber = ((date.day - 1) ~/ 7) + 1;
-    final int lastDayOfMonth = DateTime(date.year, date.month + 1, 0).day;
-    if (_weekNumber == 1) {
-      _paymentStartDateController.text = dateFormatter.format(DateTime(date.year, date.month, 15));
-    } else if (_weekNumber == 2 || _weekNumber == 3) {
-      _paymentStartDateController.text = dateFormatter.format(DateTime(date.year, date.month, lastDayOfMonth));
-    } else {
-      _paymentStartDateController.text = dateFormatter.format(DateTime(date.year, date.month + 1, 15));
-    }
   }
 
   @override
@@ -366,7 +366,7 @@ class _LoanDialogState extends ConsumerState<LoanDialog> {
                               child: TextField(
                                 controller: _numberOfGivesController,
                                 focusNode: _numberOfGivesControllerFocusNode,
-                                decoration: InputDecoration(labelText: 'No. Of Gives', prefix: const SizedBox(width: 4), errorText: _isError && _numberOfGivesController.text.isEmpty ? 'Required' : null),
+                                decoration: InputDecoration(labelText: 'No. Of Gives (Max. ${ref.read(settingControllerProvider)?.maxNumberOfGives})', prefix: const SizedBox(width: 4), errorText: _isError && _numberOfGivesController.text.isEmpty ? 'Required' : null),
                                 keyboardType: TextInputType.number,
                                 inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
                                 style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color),
@@ -539,7 +539,7 @@ class _LoanDialogState extends ConsumerState<LoanDialog> {
                                   Expanded(
                                     child: TextField(
                                       controller: _numberOfGivesController,
-                                      decoration: const InputDecoration(labelText: 'No. Of Gives', prefix: SizedBox(width: 4)),
+                                      decoration: InputDecoration(labelText: 'No. Of Gives (Max. ${ref.read(settingControllerProvider)?.maxNumberOfGives})', prefix: const SizedBox(width: 4)),
                                       style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color?.withValues(alpha: 0.5)),
                                       readOnly: true,
                                     ),
@@ -607,7 +607,7 @@ class _LoanDialogState extends ConsumerState<LoanDialog> {
                                       decoration: InputDecoration(
                                         prefixText: ' ₱ ',
                                         prefixStyle: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color?.withValues(alpha: 0.5), fontSize: Theme.of(context).textTheme.titleLarge?.fontSize),
-                                        labelText: 'Remaining Loan (${(widget.loan!.numberOfGives - widget.loan!.currentGiveNumber) + 1})',
+                                        labelText: 'Remaining Loan (${widget.loan!.numberOfGives == widget.loan!.currentGiveNumber ? 0 : (widget.loan!.numberOfGives - widget.loan!.currentGiveNumber) + 1})',
                                       ),
                                       style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color?.withValues(alpha: 0.5)),
                                       readOnly: true,
@@ -661,7 +661,7 @@ class _LoanDialogState extends ConsumerState<LoanDialog> {
                                           text: TextSpan(
                                             style: Theme.of(context).textTheme.titleLarge,
                                             children: <InlineSpan>[
-                                              const TextSpan(text: 'Total loan: '),
+                                              const TextSpan(text: 'Total paid loan: '),
                                               TextSpan(
                                                 text: '₱ ${numberFormatter.format(totalLoanTrackerById)}',
                                                 style: const TextStyle(color: Colors.blue),

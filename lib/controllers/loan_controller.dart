@@ -22,6 +22,10 @@ class LoanController extends Notifier<List<LoanModel>> {
     state = <LoanModel>[...state, newLoan];
   }
 
+  void editLoan(LoanModel updatedLoan) {
+    state = state.map((LoanModel m) => m.id == updatedLoan.id ? updatedLoan : m).toList();
+  }
+
   void deleteLoan(LoanModel loanToDelete) {
     state = state.where((LoanModel m) => m.id != loanToDelete.id).toList();
   }

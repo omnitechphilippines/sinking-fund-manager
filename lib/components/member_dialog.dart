@@ -237,7 +237,7 @@ class _MemberDialogState extends ConsumerState<MemberDialog> {
                                       final ContributionModel contribution = contributionsById[index];
                                       return Card(
                                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                                        color: DateTime.now().difference(contribution.contributionDate).inDays > 0 ? Colors.green.shade800 : Colors.red.shade800,
+                                        // color: DateTime.now().difference(contribution.contributionDate).inDays > 0 ? Colors.green.shade800 : Colors.red.shade800,
                                         child: ListTile(
                                           title: Text('₱ ${contribution.formattedContributionAmount}   ${contribution.formattedContributionDate}', style: Theme.of(context).textTheme.titleMedium),
                                           subtitle: Text('Paid Date: ${contribution.formattedPaymentDateTime}', style: TextStyle(fontSize: Theme.of(context).textTheme.bodySmall?.fontSize)),

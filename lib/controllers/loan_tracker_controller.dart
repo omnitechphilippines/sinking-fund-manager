@@ -17,7 +17,7 @@ class LoanTrackerController extends Notifier<List<LoanTrackerModel>> {
     state = <LoanTrackerModel>[...state, newLoanTracker];
   }
 
-  void deleteLoan(LoanTrackerModel loanTrackerToDelete) {
+  void deleteLoanTracker(LoanTrackerModel loanTrackerToDelete) {
     state = state.where((LoanTrackerModel m) => m.id != loanTrackerToDelete.id).toList();
   }
 }

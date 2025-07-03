@@ -251,6 +251,38 @@ class _MemberManagementPageState extends ConsumerState<MemberManagementPage> {
                               child: Column(
                                 spacing: 8,
                                 children: <Widget>[
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                                    child: Wrap(
+                                      spacing: 32,
+                                      children: <Widget>[
+                                        RichText(
+                                          text: TextSpan(
+                                            style: Theme.of(context).textTheme.titleLarge,
+                                            children: <InlineSpan>[
+                                              const TextSpan(text: 'Total contribution: '),
+                                              TextSpan(
+                                                text: '₱ ${numberFormatter.format(summary?.totalContribution)}',
+                                                style: const TextStyle(color: Colors.blue),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        RichText(
+                                          text: TextSpan(
+                                            style: Theme.of(context).textTheme.titleLarge,
+                                            children: <InlineSpan>[
+                                              const TextSpan(text: 'Total Cash On-hand: '),
+                                              TextSpan(
+                                                text: '₱ ${numberFormatter.format(summary?.totalCashOnHand)}',
+                                                style: const TextStyle(color: Colors.blue),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                   ListView.builder(
                                     shrinkWrap: true,
                                     physics: const NeverScrollableScrollPhysics(),
@@ -285,38 +317,6 @@ class _MemberManagementPageState extends ConsumerState<MemberManagementPage> {
                                       },
                                       background: Container(color: Theme.of(context).colorScheme.error.withValues(alpha: 0.75), margin: Theme.of(context).cardTheme.margin),
                                       child: MemberItem(member: members[idx]),
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                                    child: Wrap(
-                                      spacing: 32,
-                                      children: <Widget>[
-                                        RichText(
-                                          text: TextSpan(
-                                            style: Theme.of(context).textTheme.titleLarge,
-                                            children: <InlineSpan>[
-                                              const TextSpan(text: 'Total contribution: '),
-                                              TextSpan(
-                                                text: '₱ ${numberFormatter.format(summary?.totalContribution)}',
-                                                style: const TextStyle(color: Colors.blue),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        RichText(
-                                          text: TextSpan(
-                                            style: Theme.of(context).textTheme.titleLarge,
-                                            children: <InlineSpan>[
-                                              const TextSpan(text: 'Total Cash On-hand: '),
-                                              TextSpan(
-                                                text: '₱ ${numberFormatter.format(summary?.totalCashOnHand)}',
-                                                style: const TextStyle(color: Colors.blue),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
                                     ),
                                   ),
                                 ],

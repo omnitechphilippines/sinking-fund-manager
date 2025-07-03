@@ -19,8 +19,11 @@ class SettingDialog extends ConsumerStatefulWidget {
 class _SettingDialogState extends ConsumerState<SettingDialog> {
   bool _isLoading = false;
   final TextEditingController _amountPerHeadController = TextEditingController();
+  final TextEditingController _maxNumberOfGivesController = TextEditingController();
   final TextEditingController _startingDateController = TextEditingController();
   final FocusNode _amountPerHeadControllerFocusNode = FocusNode();
+  final FocusNode _contributionPeriodControllerFocusNode = FocusNode();
+  final FocusNode _maxNumberOfGivesControllerFocusNode = FocusNode();
   final FocusNode _escapeKeyFocusNode = FocusNode();
   ContributionPeriod? _selectedContributionPeriodType;
   bool _isError = false;
@@ -33,6 +36,7 @@ class _SettingDialogState extends ConsumerState<SettingDialog> {
     if (setting != null) {
       _amountPerHeadController.text = setting.formattedAmountPerHead;
       _selectedContributionPeriodType = setting.contributionPeriod;
+      _maxNumberOfGivesController.text = setting.maxNumberOfGives.toString();
       _startingDateController.text = dateFormatter.format(setting.startingDate);
     } else {
       _selectedContributionPeriodType = ContributionPeriod.quincena;
@@ -43,8 +47,11 @@ class _SettingDialogState extends ConsumerState<SettingDialog> {
   @override
   void dispose() {
     _amountPerHeadController.dispose();
+    _maxNumberOfGivesController.dispose();
     _startingDateController.dispose();
     _amountPerHeadControllerFocusNode.dispose();
+    _contributionPeriodControllerFocusNode.dispose();
+    _maxNumberOfGivesControllerFocusNode.dispose();
     _escapeKeyFocusNode.dispose();
     super.dispose();
   }
@@ -92,11 +99,14 @@ class _SettingDialogState extends ConsumerState<SettingDialog> {
   }
 
   void _saveSettings() async {
-    if (_amountPerHeadController.text.isEmpty || _startingDateController.text.isEmpty) {
+    if (_amountPerHeadController.text.isEmpty || _maxNumberOfGivesController.text.isEmpty || _startingDateController.text.isEmpty) {
       setState(() => _isError = true);
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill out all fields!')));
       if (_amountPerHeadController.text.isEmpty) {
         _amountPerHeadControllerFocusNode.requestFocus();
+      }
+      else if(_maxNumberOfGivesController.text.isEmpty){
+        _maxNumberOfGivesControllerFocusNode.requestFocus();
       }
       return;
     }
@@ -112,6 +122,7 @@ class _SettingDialogState extends ConsumerState<SettingDialog> {
         id: 1,
         amountPerHead: numberFormatter.parse(_amountPerHeadController.text).toDouble(),
         contributionPeriod: _selectedContributionPeriodType!,
+        maxNumberOfGives: int.parse(_maxNumberOfGivesController.text),
         startingDate: dateFormatter.parse(_startingDateController.text),
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
@@ -206,11 +217,13 @@ class _SettingDialogState extends ConsumerState<SettingDialog> {
                             errorText: _isError && _amountPerHeadController.text.isEmpty ? 'Required' : null,
                           ),
                           style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color),
+                          onSubmitted: (String _) => _contributionPeriodControllerFocusNode.requestFocus(),
                         ),
                       ),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: DropdownButtonFormField<ContributionPeriod>(
+                          focusNode: _contributionPeriodControllerFocusNode,
                           style: TextStyle(fontSize: Theme.of(context).textTheme.titleLarge?.fontSize, color: Theme.of(context).textTheme.titleLarge?.color),
                           value: _selectedContributionPeriodType,
                           decoration: InputDecoration(
@@ -220,11 +233,11 @@ class _SettingDialogState extends ConsumerState<SettingDialog> {
                           onChanged: (ContributionPeriod? contributionPeriodType) {
                             if (contributionPeriodType != null) {
                               setState(() => _selectedContributionPeriodType = contributionPeriodType);
-                              FocusScope.of(context).requestFocus(FocusNode());
+                              _maxNumberOfGivesControllerFocusNode.requestFocus();
                             }
                           },
                           onTap: () {
-                            FocusScope.of(context).requestFocus(FocusNode());
+                            _maxNumberOfGivesControllerFocusNode.requestFocus();
                             appendDecimal(_amountPerHeadController);
                           },
                           items: ContributionPeriod.values.map((ContributionPeriod type) {
@@ -238,6 +251,20 @@ class _SettingDialogState extends ConsumerState<SettingDialog> {
                             );
                           }).toList(),
                           icon: const Padding(padding: EdgeInsets.only(right: 4.0), child: Icon(Icons.arrow_drop_down)),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: TextField(
+                          keyboardType: TextInputType.number,
+                          inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly, CurrencyFormatter()],
+                          controller: _maxNumberOfGivesController,
+                          focusNode: _maxNumberOfGivesControllerFocusNode,
+                          decoration: InputDecoration(
+                            labelText: 'Max. Number Of Gives',
+                            errorText: _isError && _maxNumberOfGivesController.text.isEmpty ? 'Required' : null,
+                          ),
+                          style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color),
                         ),
                       ),
                       Padding(

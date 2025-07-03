@@ -2,13 +2,11 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sinking_fund_manager/controllers/setting_controller.dart';
 import 'package:sinking_fund_manager/controllers/summary_controller.dart';
 import 'package:sinking_fund_manager/models/summary_model.dart';
 import 'package:uuid/uuid.dart';
 
 import '../api_services/contributions_api_service.dart';
-import '../controllers/contribution_controller.dart';
 import '../models/contribution_model.dart';
 import '../utils/currency_formatter.dart';
 import '../utils/formatters.dart';
@@ -18,8 +16,11 @@ class ContributionDialog extends ConsumerStatefulWidget {
   final String id;
   final String name;
   final double contributionAmount;
+  final DateTime contributionDate;
+  final double maximumAmountToPay;
+  final String hintText;
 
-  const ContributionDialog({super.key, required this.id, required this.name, required this.contributionAmount});
+  const ContributionDialog({super.key, required this.id, required this.name, required this.contributionAmount, required this.contributionDate, required this.maximumAmountToPay, required this.hintText});
 
   @override
   ConsumerState<ContributionDialog> createState() => _ContributionDialogState();
@@ -34,9 +35,6 @@ class _ContributionDialogState extends ConsumerState<ContributionDialog> {
   final FocusNode _escapeKeyFocusNode = FocusNode();
   Uint8List? _proofImageBytes;
   String? _proofImageName;
-  late DateTime _contributionDate;
-  String _hintText = '';
-  double _maximumAmountToPay = 0;
   bool _isError = false;
 
   @override
@@ -44,29 +42,7 @@ class _ContributionDialogState extends ConsumerState<ContributionDialog> {
     super.initState();
     _nameController.text = widget.name;
     _contributionAmountControllerFocusNode.requestFocus();
-    final List<ContributionModel> allContributions = ref.read(contributionControllerProvider);
-    final List<ContributionModel> contributionsById = allContributions.where((ContributionModel c) => c.memberId == widget.id).toList();
-    contributionsById.sort((ContributionModel a, ContributionModel b) => b.contributionDate.compareTo(a.contributionDate));
-    if (contributionsById.isNotEmpty) {
-      _contributionDate = contributionsById[0].contributionDate;
-      final int lastDayOfMonth = DateTime(_contributionDate.year, _contributionDate.month + 1, 0).day;
-      final bool is15 = _contributionDate.day == 15;
-      final List<ContributionModel> contributionsByIdAndDate = contributionsById.where((ContributionModel c) => c.contributionDate == _contributionDate).toList();
-      final double totalContributionByDate = contributionsByIdAndDate.fold<double>(0.0, (double sum, ContributionModel contribution) => sum + contribution.contributionAmount);
-      if (totalContributionByDate == widget.contributionAmount) {
-        _contributionDate = is15 ? DateTime(_contributionDate.year, _contributionDate.month, lastDayOfMonth) : DateTime(_contributionDate.year, _contributionDate.month + 1, 15);
-        _hintText = 'not yet paid';
-        _maximumAmountToPay = totalContributionByDate;
-      } else {
-        _hintText = 'paid ₱${numberFormatter.format(totalContributionByDate)}';
-        _maximumAmountToPay = widget.contributionAmount - totalContributionByDate;
-      }
-    } else {
-      _contributionDate = ref.read(settingControllerProvider)!.startingDate;
-      _hintText = 'not yet paid';
-      _maximumAmountToPay = widget.contributionAmount;
-    }
-    _contributionAmountController.text = _maximumAmountToPay.toString();
+    _contributionAmountController.text = widget.maximumAmountToPay.toString();
     appendDecimal(_contributionAmountController);
     setState(() {});
   }
@@ -110,7 +86,7 @@ class _ContributionDialogState extends ConsumerState<ContributionDialog> {
           id: id,
           memberId: widget.id,
           memberName: widget.name,
-          contributionDate: _contributionDate,
+          contributionDate: widget.contributionDate,
           contributionAmount: numberFormatter.parse(_contributionAmountController.text).toDouble(),
           paymentDateTime: dateTimeFormatter.parse(_paymentDateTimeController.text),
           proof: _proofImageBytes,
@@ -212,8 +188,8 @@ class _ContributionDialogState extends ConsumerState<ContributionDialog> {
                                 children: <InlineSpan>[
                                   const TextSpan(text: 'Add Contribution for:   '),
                                   TextSpan(
-                                    text: dateFormatter.format(_contributionDate),
-                                    style: TextStyle(color: DateTime.now().difference(_contributionDate).inDays > 0 ? Colors.red : Colors.blue),
+                                    text: dateFormatter.format(widget.contributionDate),
+                                    style: TextStyle(color: DateTime.now().difference(widget.contributionDate).inDays > 0 ? Colors.red : Colors.blue),
                                   ),
                                 ],
                               ),
@@ -243,7 +219,7 @@ class _ContributionDialogState extends ConsumerState<ContributionDialog> {
                                   controller: _contributionAmountController,
                                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                   inputFormatters: <TextInputFormatter>[
-                                    TextInputFormatter.withFunction((TextEditingValue oldValue, TextEditingValue newValue) => (double.tryParse(newValue.text) ?? 0) <= _maximumAmountToPay ? newValue : oldValue),
+                                    TextInputFormatter.withFunction((TextEditingValue oldValue, TextEditingValue newValue) => (double.tryParse(newValue.text) ?? 0) <= widget.maximumAmountToPay ? newValue : oldValue),
                                     CurrencyFormatter(),
                                   ],
                                   decoration: InputDecoration(
@@ -252,7 +228,7 @@ class _ContributionDialogState extends ConsumerState<ContributionDialog> {
                                       color: _isError && _contributionAmountController.text.isEmpty ? const Color(0xFFD39992) : Theme.of(context).textTheme.titleMedium?.color,
                                       fontSize: Theme.of(context).textTheme.titleLarge?.fontSize,
                                     ),
-                                    labelText: 'Contribution Amount ($_hintText)',
+                                    labelText: 'Contribution Amount (${widget.hintText})',
                                     errorText: _isError && _contributionAmountController.text.isEmpty ? 'Required' : null,
                                   ),
                                   onSubmitted: (String _) {

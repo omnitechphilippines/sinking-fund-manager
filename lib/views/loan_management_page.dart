@@ -260,42 +260,6 @@ class _HomePageState extends ConsumerState<LoanManagementPage> {
                               child: Column(
                                 spacing: 8,
                                 children: <Widget>[
-                                  ListView.builder(
-                                    shrinkWrap: true,
-                                    physics: const NeverScrollableScrollPhysics(),
-                                    itemCount: loans.length,
-                                    itemBuilder: (BuildContext ctx, int idx) => Dismissible(
-                                      key: ValueKey<String>(loans[idx].id),
-                                      confirmDismiss: (DismissDirection direction) async {
-                                        return await showConfirmDialog(context: context, title: 'Confirm Deletion', message: 'Are you sure you want to delete loan of "${loans[idx].name}"?', confirmText: 'Delete', cancelText: 'Cancel');
-                                      },
-                                      onDismissed: (DismissDirection direction) async {
-                                        setState(() => _isLoading = true);
-                                        try {
-                                          await LoansApiService().deleteLoanById(loans[idx].id);
-                                          if (context.mounted) {
-                                            ref.read(loanControllerProvider.notifier).deleteLoan(loans[idx]);
-                                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Loan of "${loans[idx].name}" was successfully deleted!'), duration: const Duration(seconds: 5)));
-                                          }
-                                        } catch (e) {
-                                          if (context.mounted) {
-                                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              SnackBar(
-                                                backgroundColor: Colors.red,
-                                                content: Text('Error: $e', style: const TextStyle(color: Colors.white)),
-                                              ),
-                                            );
-                                          }
-                                        } finally {
-                                          setState(() => _isLoading = false);
-                                        }
-                                      },
-                                      background: Container(color: Theme.of(context).colorScheme.error.withValues(alpha: 0.75), margin: Theme.of(context).cardTheme.margin),
-                                      child: LoanItem(loan: loans[idx]),
-                                    ),
-                                  ),
                                   Padding(
                                     padding: const EdgeInsets.symmetric(horizontal: 16),
                                     child: Wrap(
@@ -337,7 +301,55 @@ class _HomePageState extends ConsumerState<LoanManagementPage> {
                                             ],
                                           ),
                                         ),
+                                        RichText(
+                                          text: TextSpan(
+                                            style: Theme.of(context).textTheme.titleLarge,
+                                            children: <InlineSpan>[
+                                              const TextSpan(text: 'Total interest: '),
+                                              TextSpan(
+                                                text: '₱ ${numberFormatter.format(summary?.totalInterestAmount)}',
+                                                style: const TextStyle(color: Colors.blue),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
                                       ],
+                                    ),
+                                  ),
+                                  ListView.builder(
+                                    shrinkWrap: true,
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    itemCount: loans.length,
+                                    itemBuilder: (BuildContext ctx, int idx) => Dismissible(
+                                      key: ValueKey<String>(loans[idx].id),
+                                      confirmDismiss: (DismissDirection direction) async {
+                                        return await showConfirmDialog(context: context, title: 'Confirm Deletion', message: 'Are you sure you want to delete loan of "${loans[idx].name}"?', confirmText: 'Delete', cancelText: 'Cancel');
+                                      },
+                                      onDismissed: (DismissDirection direction) async {
+                                        setState(() => _isLoading = true);
+                                        try {
+                                          await LoansApiService().deleteLoanById(loans[idx].id);
+                                          if (context.mounted) {
+                                            ref.read(loanControllerProvider.notifier).deleteLoan(loans[idx]);
+                                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Loan of "${loans[idx].name}" was successfully deleted!'), duration: const Duration(seconds: 5)));
+                                          }
+                                        } catch (e) {
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(
+                                                backgroundColor: Colors.red,
+                                                content: Text('Error: $e', style: const TextStyle(color: Colors.white)),
+                                              ),
+                                            );
+                                          }
+                                        } finally {
+                                          setState(() => _isLoading = false);
+                                        }
+                                      },
+                                      background: Container(color: Theme.of(context).colorScheme.error.withValues(alpha: 0.75), margin: Theme.of(context).cardTheme.margin),
+                                      child: LoanItem(loan: loans[idx]),
                                     ),
                                   ),
                                 ],

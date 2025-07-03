@@ -28,10 +28,12 @@ class LoansApiService {
   }
 
   /// Update a loan
-  Future<bool> updateLoan(LoanModel loan) async {
-    final http.Response response = await http.put(Uri.parse(baseUrl), headers: <String, String>{'Content-Type': 'application/json'}, body: jsonEncode(loan.toJson()));
+  Future<bool> updateLoan(LoanModel loan, double interestAmount) async {
+    final Map<String, dynamic> body = loan.toJson();
+    body['interest_amount'] = interestAmount;
+    final http.Response response = await http.put(Uri.parse(baseUrl), headers: <String, String>{'Content-Type': 'application/json'}, body: jsonEncode(body));
     if (response.statusCode == 201 || response.statusCode == 200) {
-      return jsonDecode(response.body)['affectedRows'] == 1 ? true : false;
+      return jsonDecode(response.body)['affectedRows'] == 2 ? true : false;
     } else {
       throw Exception('Update Loan failed: ${response.body}');
     }

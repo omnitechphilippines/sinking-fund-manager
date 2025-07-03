@@ -9,6 +9,7 @@ import '../components/loan_tracker_dialog.dart';
 import '../controllers/loan_controller.dart';
 import '../controllers/loan_tracker_controller.dart';
 import '../controllers/setting_controller.dart';
+import '../controllers/summary_controller.dart';
 import '../models/loan_model.dart';
 import '../models/loan_tracker_model.dart';
 import '../models/setting_model.dart';
@@ -51,8 +52,10 @@ class _LoanItemState extends ConsumerState<LoanItem> {
                 currentTotalAmountToPay: _loan.currentTotalAmountToPay + _currentLoanInterestAmount,
                 currentRemainingAmountToPay: _loan.currentRemainingAmountToPay + _currentLoanInterestAmount,
               ),
+              _currentLoanInterestAmount,
             );
             if (response && mounted) {
+              ref.read(summaryControllerProvider.notifier).editSummary(totalInterestAmount: ref.read(summaryControllerProvider)!.totalInterestAmount + _currentLoanInterestAmount);
               ScaffoldMessenger.of(context).hideCurrentSnackBar();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -86,8 +89,11 @@ class _LoanItemState extends ConsumerState<LoanItem> {
     final SettingModel? setting = ref.watch(settingControllerProvider);
     return _isLoading
         ? const Center(child: CircularProgressIndicator())
-        : Card(
+        : LayoutBuilder(builder: (_, BoxConstraints constraints){
+      final bool isSmallScreen = constraints.maxWidth < 600;
+          return Card(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+            color: _loan.currentRemainingAmountToPay == 0 ? Colors.green.shade900 : null,
             elevation: 5,
             shadowColor: Theme.of(context).brightness == Brightness.dark ? Colors.white.withValues(alpha: 0.2) : Colors.black,
             child: InkWell(
@@ -104,8 +110,8 @@ class _LoanItemState extends ConsumerState<LoanItem> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        Text(_loan.name, style: Theme.of(context).textTheme.titleLarge),
-                        Text('₱ ${_loan.formattedCurrentRemainingAmountToPay} (${_loan.numberOfGives - (_loan.currentGiveNumber - 1)})', style: Theme.of(context).textTheme.titleMedium),
+                        Text(isSmallScreen? _loan.name.split(' ')[0] : _loan.name, style: Theme.of(context).textTheme.titleLarge),
+                        Text(_loan.currentRemainingAmountToPay == 0 ? 'Paid' : '₱ ${_loan.formattedCurrentRemainingAmountToPay} (${_loan.currentGiveNumber - 1}/${_loan.numberOfGives})', style: Theme.of(context).textTheme.titleMedium),
                       ],
                     ),
                     Column(
@@ -131,33 +137,33 @@ class _LoanItemState extends ConsumerState<LoanItem> {
                           tooltip: 'Pay Loan',
                           onPressed: setting != null
                               ? () async {
-                                  final List<dynamic>? result = await showDialog(
-                                    barrierDismissible: false,
-                                    context: context,
-                                    builder: (BuildContext _) => LoanTrackerDialog(loan: _loan),
-                                  );
-                                  if (result != null && result.isNotEmpty) {
-                                    final LoanTrackerModel newLoanTracker = result.first;
-                                    final LoanModel updatedLoan = result[1];
-                                    ref.read(loanTrackerControllerProvider.notifier).addLoanTracker(newLoanTracker);
-                                    _currentGiveNumber = updatedLoan.currentGiveNumber;
-                                    _currentPaymentDueDate = updatedLoan.currentPaymentDueDate;
-                                    _currentGiveAmount = updatedLoan.currentGiveAmount;
-                                    _loanInterestRate = updatedLoan.currentGiveInterest;
-                                    _loan = updatedLoan;
-                                    await ref.read(loanControllerProvider.notifier).init();
-                                    if (context.mounted) {
-                                      final String dateTime = newLoanTracker.formattedPaymentDateTime;
-                                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          backgroundColor: Colors.green,
-                                          content: Text('Loan payment for member "${_loan.name}" on $dateTime was successfully added!', style: const TextStyle(color: Colors.white)),
-                                        ),
-                                      );
-                                    }
-                                  }
-                                }
+                            final List<dynamic>? result = await showDialog(
+                              barrierDismissible: false,
+                              context: context,
+                              builder: (BuildContext _) => LoanTrackerDialog(loan: _loan),
+                            );
+                            if (result != null && result.isNotEmpty) {
+                              final LoanTrackerModel newLoanTracker = result.first;
+                              final LoanModel updatedLoan = result[1];
+                              ref.read(loanTrackerControllerProvider.notifier).addLoanTracker(newLoanTracker);
+                              _currentGiveNumber = updatedLoan.currentGiveNumber;
+                              _currentPaymentDueDate = updatedLoan.currentPaymentDueDate;
+                              _currentGiveAmount = updatedLoan.currentGiveAmount;
+                              _loanInterestRate = updatedLoan.currentGiveInterest;
+                              _loan = updatedLoan;
+                              ref.read(loanControllerProvider.notifier).editLoan(updatedLoan);
+                              if (context.mounted) {
+                                final String dateTime = newLoanTracker.formattedPaymentDateTime;
+                                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    backgroundColor: Colors.green,
+                                    content: Text('Loan payment for member "${_loan.name}" on $dateTime was successfully added!', style: const TextStyle(color: Colors.white)),
+                                  ),
+                                );
+                              }
+                            }
+                          }
                               : null,
                           icon: Icon(Icons.payments_outlined, color: setting != null ? null : Colors.grey.shade600),
                         ),
@@ -198,5 +204,6 @@ class _LoanItemState extends ConsumerState<LoanItem> {
               ),
             ),
           );
+    });
   }
 }

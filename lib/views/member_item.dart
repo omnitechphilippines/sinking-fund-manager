@@ -27,18 +27,24 @@ class _MemberItemState extends ConsumerState<MemberItem> {
   late DateTime _contributionDate;
   double _maximumAmountToPay = 0;
   String _hintText = '';
+  List<ContributionModel> _contributionsById = <ContributionModel>[];
 
   @override
   void initState() {
     super.initState();
-    final List<ContributionModel> allContributions = ref.read(contributionControllerProvider);
-    final List<ContributionModel> contributionsById = allContributions.where((ContributionModel c) => c.memberId == widget.member.id).toList();
-    contributionsById.sort((ContributionModel a, ContributionModel b) => b.contributionDate.compareTo(a.contributionDate));
-    if (contributionsById.isNotEmpty) {
-      _contributionDate = contributionsById[0].contributionDate;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final SettingModel? setting = ref.watch(settingControllerProvider);
+    final List<ContributionModel> allContributions = ref.watch(contributionControllerProvider);
+    _contributionsById = allContributions.where((ContributionModel c) => c.memberId == widget.member.id).toList();
+    _contributionsById.sort((ContributionModel a, ContributionModel b) => b.contributionDate.compareTo(a.contributionDate));
+    if (_contributionsById.isNotEmpty) {
+      _contributionDate = _contributionsById[0].contributionDate;
       final int lastDayOfMonth = DateTime(_contributionDate.year, _contributionDate.month + 1, 0).day;
       final bool is15 = _contributionDate.day == 15;
-      final List<ContributionModel> contributionsByIdAndDate = contributionsById.where((ContributionModel c) => c.contributionDate == _contributionDate).toList();
+      final List<ContributionModel> contributionsByIdAndDate = _contributionsById.where((ContributionModel c) => c.contributionDate == _contributionDate).toList();
       final double totalContributionByDate = contributionsByIdAndDate.fold<double>(0.0, (double sum, ContributionModel contribution) => sum + contribution.contributionAmount);
       if (totalContributionByDate == widget.member.contributionAmount) {
         _contributionDate = is15 ? DateTime(_contributionDate.year, _contributionDate.month, lastDayOfMonth) : DateTime(_contributionDate.year, _contributionDate.month + 1, 15);
@@ -53,11 +59,6 @@ class _MemberItemState extends ConsumerState<MemberItem> {
       _hintText = 'not yet paid';
       _maximumAmountToPay = widget.member.contributionAmount;
     }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final SettingModel? setting = ref.watch(settingControllerProvider);
     return _isLoading
         ? const Center(child: CircularProgressIndicator())
         : Card(
@@ -126,7 +127,7 @@ class _MemberItemState extends ConsumerState<MemberItem> {
                               : null,
                           icon: Icon(Icons.add_circle_sharp, color: setting != null ? null : Colors.grey.shade600),
                         ),
-                        IconButton(
+                        _contributionsById.isEmpty ? IconButton(
                           tooltip: 'Delete Member',
                           onPressed: () async {
                             final bool shouldDelete = await showConfirmDialog(context: context, title: 'Confirm Deletion', message: 'Are you sure you want to delete "${widget.member.name}"?', confirmText: 'Delete', cancelText: 'Cancel');
@@ -137,7 +138,7 @@ class _MemberItemState extends ConsumerState<MemberItem> {
                                 if (context.mounted) {
                                   ref.read(memberControllerProvider.notifier).deleteMember(widget.member);
                                   ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Member "${widget.member.name}" was successfully deleted!'), duration: const Duration(seconds: 5)));
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Member "${widget.member.name}" was successfully deleted!')));
                                 }
                               }
                             } catch (e) {
@@ -155,6 +156,35 @@ class _MemberItemState extends ConsumerState<MemberItem> {
                             }
                           },
                           icon: const Icon(Icons.delete, color: Colors.red),
+                        ) : IconButton(
+                          tooltip: 'Disable Member',
+                          onPressed: () async {
+                            final bool shouldDelete = await showConfirmDialog(context: context, title: 'Confirm Deactivation', message: 'Are you sure you want to disable "${widget.member.name}"?', confirmText: 'Disable', cancelText: 'Cancel');
+                            setState(() => _isLoading = true);
+                            try {
+                              if (shouldDelete) {
+                                await MembersApiService().deleteMemberById(widget.member.id);
+                                if (context.mounted) {
+                                  ref.read(memberControllerProvider.notifier).deleteMember(widget.member);
+                                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Member "${widget.member.name}" was successfully disabled!')));
+                                }
+                              }
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    backgroundColor: Colors.red,
+                                    content: Text('Error: $e', style: const TextStyle(color: Colors.white)),
+                                  ),
+                                );
+                              }
+                            } finally {
+                              setState(() => _isLoading = false);
+                            }
+                          },
+                          icon: const Icon(Icons.do_disturb_alt_outlined , color: Colors.grey),
                         ),
                       ],
                     ),

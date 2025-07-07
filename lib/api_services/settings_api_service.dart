@@ -17,7 +17,7 @@ class SettingsApiService {
         return null;
       }
     } else {
-      throw Exception('Get Setting API failed: ${response.body}');
+      throw Exception('Get setting failed: ${response.body}');
     }
   }
 
@@ -28,7 +28,7 @@ class SettingsApiService {
     if (response.statusCode == 201 || response.statusCode == 200) {
       return jsonDecode(response.body)['affectedRows'] == 1 ? true : false;
     } else {
-      throw Exception('Add Setting failed: ${response.body}');
+      throw Exception('Add setting failed: ${response.body}');
     }
   }
 
@@ -38,7 +38,7 @@ class SettingsApiService {
     if (response.statusCode == 201 || response.statusCode == 200) {
       return jsonDecode(response.body)['affectedRows'] == 1 ? true : false;
     } else {
-      throw Exception('Update Setting failed: ${response.body}');
+      throw Exception('Update setting failed: ${response.body}');
     }
   }
 
@@ -48,7 +48,7 @@ class SettingsApiService {
     if (response.statusCode == 200) {
       return true;
     } else {
-      throw Exception('Delete Setting failed: ${response.body}');
+      throw Exception('Delete setting failed: ${response.body}');
     }
   }
 }

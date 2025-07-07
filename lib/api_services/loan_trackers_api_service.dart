@@ -40,7 +40,7 @@ class LoanTrackersApiService {
     if (response.statusCode == 200 || response.statusCode == 201) {
       return jsonDecode(await response.stream.bytesToString())['affectedRows'] == 3 ? true : false;
     } else {
-      throw Exception('Add Loan Tracker failed: ${response.statusCode}');
+      throw Exception('Add loan tracker failed: ${response.statusCode}');
     }
   }
 
@@ -50,7 +50,7 @@ class LoanTrackersApiService {
     if (response.statusCode == 200) {
       return LoanTrackerModel.fromJson(jsonDecode(response.body).first);
     } else {
-      throw Exception('Get Loan Tracker by ID failed: ${response.body}');
+      throw Exception('Get loan tracker by ID failed: ${response.body}');
     }
   }
 
@@ -59,7 +59,7 @@ class LoanTrackersApiService {
     final http.Response response = await http.delete(Uri.parse('$baseUrl/$id'));
 
     if (response.statusCode != 200 && response.statusCode != 204) {
-      throw Exception('Delete Loan Tracker failed: ${response.body}');
+      throw Exception('Delete loan tracker failed: ${response.body}');
     }
   }
 }

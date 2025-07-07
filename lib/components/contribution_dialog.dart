@@ -81,24 +81,21 @@ class _ContributionDialogState extends ConsumerState<ContributionDialog> {
       appendDecimal(_contributionAmountController);
       final SummaryModel? summary = ref.read(summaryControllerProvider);
       final String id = const Uuid().v4();
-      final bool response = await ContributionsApiService().addContribution(
-        ContributionModel(
-          id: id,
-          memberId: widget.id,
-          memberName: widget.name,
-          contributionDate: widget.contributionDate,
-          contributionAmount: numberFormatter.parse(_contributionAmountController.text).toDouble(),
-          paymentDateTime: dateTimeFormatter.parse(_paymentDateTimeController.text),
-          proof: _proofImageBytes,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        ),
-        _proofImageName,
+      final ContributionModel newContribution = ContributionModel(
+        id: id,
+        memberId: widget.id,
+        memberName: widget.name,
+        contributionDate: widget.contributionDate,
+        contributionAmount: numberFormatter.parse(_contributionAmountController.text).toDouble(),
+        paymentDateTime: dateTimeFormatter.parse(_paymentDateTimeController.text),
+        proof: _proofImageBytes,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
       );
-      if (response) {
-        final ContributionModel newContribution = await ContributionsApiService().getContributionById(id);
-        ref.read(summaryControllerProvider.notifier).editSummary(totalContribution: summary!.totalContribution + newContribution.contributionAmount,totalCashOnHand: summary.totalCashOnHand + newContribution.contributionAmount);
-        if (mounted) Navigator.of(context).pop(<ContributionModel>[newContribution]);
+      final bool response = await ContributionsApiService().addContribution(newContribution, _proofImageName);
+      if (response && mounted) {
+        ref.read(summaryControllerProvider.notifier).editSummary(totalContribution: summary!.totalContribution + newContribution.contributionAmount, totalCashOnHand: summary.totalCashOnHand + newContribution.contributionAmount);
+        Navigator.of(context).pop(<ContributionModel>[newContribution]);
       } else {
         if (mounted) {
           final String dateTime = dateTimeFormatter.format(dateTimeFormatter.parse(_paymentDateTimeController.text));

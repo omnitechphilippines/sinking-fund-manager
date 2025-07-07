@@ -13,7 +13,7 @@ class MembersApiService {
       final List<dynamic> data = jsonDecode(response.body);
       return data.map((dynamic json) => MemberModel.fromJson(json)).toList();
     } else {
-      throw Exception('Get Members API failed: ${response.body}');
+      throw Exception('Get members failed: ${response.body}');
     }
   }
 
@@ -28,7 +28,7 @@ class MembersApiService {
     if (response.statusCode == 201 || response.statusCode == 200) {
       return jsonDecode(response.body)['affectedRows'] == 1 ? true : false;
     } else {
-      throw Exception('Add Member failed: ${response.body}');
+      throw Exception('Add member failed: ${response.body}');
     }
   }
 
@@ -39,7 +39,7 @@ class MembersApiService {
     if (response.statusCode == 200) {
       return MemberModel.fromJson(jsonDecode(response.body).first);
     } else {
-      throw Exception('Get Member by ID failed: ${response.body}');
+      throw Exception('Get member by ID failed: ${response.body}');
     }
   }
 
@@ -48,7 +48,7 @@ class MembersApiService {
     final http.Response response = await http.delete(Uri.parse('$baseUrl/$id'));
 
     if (response.statusCode != 200 && response.statusCode != 204) {
-      throw Exception('Delete Member failed: ${response.body}');
+      throw Exception('Delete member failed: ${response.body}');
     }
   }
 }

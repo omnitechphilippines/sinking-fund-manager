@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sinking_fund_manager/controllers/loan_tracker_controller.dart';
+import 'package:sinking_fund_manager/models/loan_tracker_model.dart';
 
 import '../../components/footer.dart';
 import '../../components/side_nav.dart';
@@ -222,6 +224,7 @@ class _HomePageState extends ConsumerState<LoanManagementPage> {
     final List<LoanModel> loans = ref.watch(loanControllerProvider);
     final SummaryModel? summary = ref.watch(summaryControllerProvider);
     final SettingModel? setting = ref.watch(settingControllerProvider);
+    final List<LoanTrackerModel> loanTrackers = ref.watch(loanTrackerControllerProvider);
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         tooltip: 'Add Loan',
@@ -323,6 +326,16 @@ class _HomePageState extends ConsumerState<LoanManagementPage> {
                                     itemBuilder: (BuildContext ctx, int idx) => Dismissible(
                                       key: ValueKey<String>(loans[idx].id),
                                       confirmDismiss: (DismissDirection direction) async {
+                                        if (loanTrackers.where(( LoanTrackerModel lt) => lt.loanId == loans[idx].id).isNotEmpty) {
+                                          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(
+                                              content: Text("Only loans haven't paid can be deleted.", style: TextStyle(color: Colors.white)),
+                                              backgroundColor: Colors.orange,
+                                            ),
+                                          );
+                                          return false;
+                                        }
                                         return await showConfirmDialog(context: context, title: 'Confirm Deletion', message: 'Are you sure you want to delete loan of "${loans[idx].name}"?', confirmText: 'Delete', cancelText: 'Cancel');
                                       },
                                       onDismissed: (DismissDirection direction) async {
@@ -332,7 +345,7 @@ class _HomePageState extends ConsumerState<LoanManagementPage> {
                                           if (context.mounted) {
                                             ref.read(loanControllerProvider.notifier).deleteLoan(loans[idx]);
                                             ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Loan of "${loans[idx].name}" was successfully deleted!'), duration: const Duration(seconds: 5)));
+                                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Loan of "${loans[idx].name}" was successfully deleted!')));
                                           }
                                         } catch (e) {
                                           if (context.mounted) {

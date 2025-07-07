@@ -15,7 +15,7 @@ class ContributionsApiService {
       final List<dynamic> data = jsonDecode(response.body);
       return data.map((dynamic json) => ContributionModel.fromJson(json)).toList();
     } else {
-      throw Exception('Get Contributions API failed: ${response.body}');
+      throw Exception('Get contributions failed: ${response.body}');
     }
   }
 
@@ -35,7 +35,7 @@ class ContributionsApiService {
     if (response.statusCode == 200 || response.statusCode == 201) {
       return jsonDecode(await response.stream.bytesToString())['affectedRows'] == 2 ? true : false;
     } else {
-      throw Exception('Add Contribution failed: ${response.statusCode}');
+      throw Exception('Add contribution failed: ${response.statusCode}');
     }
   }
 
@@ -46,7 +46,7 @@ class ContributionsApiService {
     if (response.statusCode == 200) {
       return ContributionModel.fromJson(jsonDecode(response.body).first);
     } else {
-      throw Exception('Get Contribution by ID failed: ${response.body}');
+      throw Exception('Get contribution by ID failed: ${response.body}');
     }
   }
 
@@ -57,16 +57,16 @@ class ContributionsApiService {
     if (response.statusCode == 200) {
       return ContributionModel.fromJson(jsonDecode(response.body).first);
     } else {
-      throw Exception('Get Contribution by Name failed: ${response.body}');
+      throw Exception('Get contribution by name failed: ${response.body}');
     }
   }
 
   /// Delete contribution by ID
-  Future<void> deleteContributionById(String id) async {
-    final http.Response response = await http.delete(Uri.parse('$baseUrl/$id'));
+  Future<void> deleteContributionById(String id, double contributionAmount) async {
+    final http.Response response = await http.delete(Uri.parse('$baseUrl/$id'), body: jsonEncode(<String, double>{'contribution_amount': contributionAmount}));
 
     if (response.statusCode != 200 && response.statusCode != 204) {
-      throw Exception('Delete Contribution failed: ${response.body}');
+      throw Exception('Delete contribution failed: ${response.body}');
     }
   }
 }

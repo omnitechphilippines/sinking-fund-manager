@@ -15,6 +15,7 @@ import '../models/member_model.dart';
 import '../models/summary_model.dart';
 import '../utils/formatters.dart';
 import '../widgets/buttons/custom_icon_button.dart';
+import 'confirm_dialog.dart';
 
 class LoanDialog extends ConsumerStatefulWidget {
   final LoanModel? loan;
@@ -76,6 +77,7 @@ class _LoanDialogState extends ConsumerState<LoanDialog> {
         _paymentStartDateController.text = dateFormatter.format(DateTime(now.year, now.month + 1, 15));
       }
       _nameControllerFocusNode.requestFocus();
+      WidgetsBinding.instance.addPostFrameCallback((Duration _) => ref.read(memberControllerProvider.notifier).setSort(MemberSortType.name,MemberSortDirection.ascending));
     }
   }
 
@@ -211,6 +213,7 @@ class _LoanDialogState extends ConsumerState<LoanDialog> {
       loanTrackersById.sort((LoanTrackerModel a, LoanTrackerModel b) => a.paymentDueDate.compareTo(b.paymentDueDate));
       totalLoanTrackerById = loanTrackersById.fold<double>(0.0, (double sum, LoanTrackerModel loanTracker) => sum + loanTracker.giveAmount);
     }
+    final List<MemberModel> members = ref.read(memberControllerProvider);
     return Focus(
       focusNode: _escapeKeyFocusNode,
       autofocus: true,
@@ -257,12 +260,50 @@ class _LoanDialogState extends ConsumerState<LoanDialog> {
                             ),
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 16),
-                              child: TextField(
+                              child: RawAutocomplete<String>(
                                 focusNode: _nameControllerFocusNode,
-                                controller: _nameController,
-                                decoration: InputDecoration(labelText: 'Name', prefix: const SizedBox(width: 4), errorText: _isError && _nameController.text.isEmpty ? 'Required' : null),
-                                style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color),
-                                onSubmitted: (String _) => _comakerControllerFocusNode.requestFocus(),
+                                textEditingController: _nameController,
+                                optionsBuilder: (TextEditingValue textEditingValue) {
+                                  if (textEditingValue.text == '') {
+                                    return const Iterable<String>.empty();
+                                  }
+                                  return members.map((MemberModel m) => m.name).toList().where((String name) {
+                                    return name.toLowerCase().contains(textEditingValue.text.toLowerCase());
+                                  });
+                                },
+                                onSelected: (String selectedName) => _nameController.text = selectedName,
+                                fieldViewBuilder: (BuildContext context, TextEditingController textController, FocusNode focusNode, VoidCallback onFieldSubmitted) {
+                                  return TextField(
+                                    controller: textController,
+                                    focusNode: focusNode,
+                                    decoration: InputDecoration(labelText: 'Name', prefix: const SizedBox(width: 4), errorText: _isError && textController.text.isEmpty ? 'Required' : null),
+                                    style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color),
+                                    onSubmitted: (String _) => _comakerControllerFocusNode.requestFocus(),
+                                  );
+                                },
+                                optionsViewBuilder: (BuildContext context, AutocompleteOnSelected<String> onSelected, Iterable<String> options) {
+                                  return Align(
+                                    alignment: Alignment.topLeft,
+                                    child: Material(
+                                      elevation: 4,
+                                      child: ListView.builder(
+                                        padding: EdgeInsets.zero,
+                                        shrinkWrap: true,
+                                        itemCount: options.length,
+                                        itemBuilder: (BuildContext context, int index) {
+                                          final String option = options.elementAt(index);
+                                          return ListTile(
+                                            title: Text(
+                                              option,
+                                              style: TextStyle(fontSize: Theme.of(context).textTheme.titleLarge?.fontSize, color: Theme.of(context).textTheme.titleLarge?.color),
+                                            ),
+                                            onTap: () => onSelected(option),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
                             ),
                             Padding(
@@ -366,7 +407,11 @@ class _LoanDialogState extends ConsumerState<LoanDialog> {
                               child: TextField(
                                 controller: _numberOfGivesController,
                                 focusNode: _numberOfGivesControllerFocusNode,
-                                decoration: InputDecoration(labelText: 'No. Of Gives (Max. ${ref.read(settingControllerProvider)?.maxNumberOfGives})', prefix: const SizedBox(width: 4), errorText: _isError && _numberOfGivesController.text.isEmpty ? 'Required' : null),
+                                decoration: InputDecoration(
+                                  labelText: 'No. Of Gives (Max. ${ref.read(settingControllerProvider)?.maxNumberOfGives})',
+                                  prefix: const SizedBox(width: 4),
+                                  errorText: _isError && _numberOfGivesController.text.isEmpty ? 'Required' : null,
+                                ),
                                 keyboardType: TextInputType.number,
                                 inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
                                 style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color),
@@ -632,27 +677,73 @@ class _LoanDialogState extends ConsumerState<LoanDialog> {
                                           shrinkWrap: true,
                                           padding: const EdgeInsets.symmetric(horizontal: 0),
                                           itemCount: loanTrackersById.length,
-                                          itemBuilder: (BuildContext context, int index) {
-                                            final LoanTrackerModel loanTracker = loanTrackersById[index];
-                                            return Card(
-                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                                              child: ListTile(
-                                                title: Text('₱ ${loanTracker.formattedGiveAmount}   ${loanTracker.formattedPaymentDueDate}', style: Theme.of(context).textTheme.titleMedium),
-                                                subtitle: Text('Paid Date: ${loanTracker.formattedPaymentDateTime}', style: TextStyle(fontSize: Theme.of(context).textTheme.bodySmall?.fontSize)),
-                                                trailing: loanTracker.proof != null
-                                                    ? InkWell(
-                                                        onTap: () {
-                                                          showDialog(
-                                                            context: context,
-                                                            builder: (BuildContext context) => Dialog(
-                                                              insetPadding: const EdgeInsets.all(16),
-                                                              child: InteractiveViewer(child: Image.memory(loanTracker.proof!)),
-                                                            ),
-                                                          );
-                                                        },
-                                                        child: Image.memory(loanTracker.proof!),
-                                                      )
-                                                    : null,
+                                          itemBuilder: (BuildContext context, int idx) {
+                                            final LoanTrackerModel loanTracker = loanTrackersById[idx];
+                                            return Dismissible(
+                                              key: ValueKey<String>(loanTrackersById[idx].id),
+                                              confirmDismiss: (DismissDirection direction) async {
+                                                if (idx != loanTrackersById.length - 1) {
+                                                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    const SnackBar(
+                                                      content: Text('Only the latest paid loan can be deleted.', style: TextStyle(color: Colors.white)),
+                                                      backgroundColor: Colors.orange,
+                                                    ),
+                                                  );
+                                                  return false;
+                                                }
+                                                return await showConfirmDialog(
+                                                  context: context,
+                                                  title: 'Confirm Deletion',
+                                                  message: 'Are you sure you want to delete loan of "${loanTrackersById[idx].loanName}"?',
+                                                  confirmText: 'Delete',
+                                                  cancelText: 'Cancel',
+                                                );
+                                              },
+                                              onDismissed: (DismissDirection direction) async {
+                                                setState(() => _isLoading = true);
+                                                try {
+                                                  // await MembersApiService().deleteLoanTrackerById(loanTrackersById[idx].id);
+                                                  if (context.mounted) {
+                                                    // ref.read(memberControllerProvider.notifier).deleteLoanTracker(loanTrackersById[idx]);
+                                                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Loan of "${loanTrackersById[idx].loanName}" was successfully deleted!')));
+                                                  }
+                                                } catch (e) {
+                                                  if (context.mounted) {
+                                                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                      SnackBar(
+                                                        backgroundColor: Colors.red,
+                                                        content: Text('Error: $e', style: const TextStyle(color: Colors.white)),
+                                                      ),
+                                                    );
+                                                  }
+                                                } finally {
+                                                  setState(() => _isLoading = false);
+                                                }
+                                              },
+                                              background: Container(color: Theme.of(context).colorScheme.error.withValues(alpha: 0.75), margin: Theme.of(context).cardTheme.margin),
+                                              child: Card(
+                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                                                child: ListTile(
+                                                  title: Text('₱ ${loanTracker.formattedGiveAmount}   ${loanTracker.formattedPaymentDueDate}', style: Theme.of(context).textTheme.titleMedium),
+                                                  subtitle: Text('Paid: ${loanTracker.formattedPaymentDateTime}', style: TextStyle(fontSize: Theme.of(context).textTheme.bodySmall?.fontSize)),
+                                                  trailing: loanTracker.proof != null
+                                                      ? InkWell(
+                                                          onTap: () {
+                                                            showDialog(
+                                                              context: context,
+                                                              builder: (BuildContext context) => Dialog(
+                                                                insetPadding: const EdgeInsets.all(16),
+                                                                child: InteractiveViewer(child: Image.memory(loanTracker.proof!)),
+                                                              ),
+                                                            );
+                                                          },
+                                                          child: Image.memory(loanTracker.proof!),
+                                                        )
+                                                      : null,
+                                                ),
                                               ),
                                             );
                                           },

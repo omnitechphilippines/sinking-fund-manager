@@ -24,6 +24,7 @@ class _SettingDialogState extends ConsumerState<SettingDialog> {
   final FocusNode _amountPerHeadControllerFocusNode = FocusNode();
   final FocusNode _contributionPeriodControllerFocusNode = FocusNode();
   final FocusNode _maxNumberOfGivesControllerFocusNode = FocusNode();
+  final FocusNode _startingDateControllerFocusNode = FocusNode();
   final FocusNode _escapeKeyFocusNode = FocusNode();
   ContributionPeriod? _selectedContributionPeriodType;
   bool _isError = false;
@@ -52,6 +53,7 @@ class _SettingDialogState extends ConsumerState<SettingDialog> {
     _amountPerHeadControllerFocusNode.dispose();
     _contributionPeriodControllerFocusNode.dispose();
     _maxNumberOfGivesControllerFocusNode.dispose();
+    _startingDateControllerFocusNode.dispose();
     _escapeKeyFocusNode.dispose();
     super.dispose();
   }
@@ -104,8 +106,7 @@ class _SettingDialogState extends ConsumerState<SettingDialog> {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill out all fields!')));
       if (_amountPerHeadController.text.isEmpty) {
         _amountPerHeadControllerFocusNode.requestFocus();
-      }
-      else if(_maxNumberOfGivesController.text.isEmpty){
+      } else if (_maxNumberOfGivesController.text.isEmpty) {
         _maxNumberOfGivesControllerFocusNode.requestFocus();
       }
       return;
@@ -260,16 +261,18 @@ class _SettingDialogState extends ConsumerState<SettingDialog> {
                           inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly, CurrencyFormatter()],
                           controller: _maxNumberOfGivesController,
                           focusNode: _maxNumberOfGivesControllerFocusNode,
-                          decoration: InputDecoration(
-                            labelText: 'Max. Number Of Gives',
-                            errorText: _isError && _maxNumberOfGivesController.text.isEmpty ? 'Required' : null,
-                          ),
+                          decoration: InputDecoration(labelText: 'Max. Number Of Gives', errorText: _isError && _maxNumberOfGivesController.text.isEmpty ? 'Required' : null),
                           style: TextStyle(color: Theme.of(context).textTheme.titleMedium?.color),
+                          onSubmitted: (String _) {
+                            _datePicker();
+                            _startingDateControllerFocusNode.requestFocus();
+                          },
                         ),
                       ),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: TextField(
+                          focusNode: _startingDateControllerFocusNode,
                           controller: _startingDateController,
                           decoration: InputDecoration(
                             labelText: 'Starting Date',
@@ -281,6 +284,7 @@ class _SettingDialogState extends ConsumerState<SettingDialog> {
                                 ? 'Invalid'
                                 : null,
                             suffixIcon: IconButton(
+                              focusNode: _startingDateControllerFocusNode,
                               onPressed: () {
                                 appendDecimal(_amountPerHeadController);
                                 _datePicker();

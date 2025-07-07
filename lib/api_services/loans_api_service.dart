@@ -13,7 +13,7 @@ class LoansApiService {
       final List<dynamic> data = jsonDecode(response.body);
       return data.map((dynamic json) => LoanModel.fromJson(json)).toList();
     } else {
-      throw Exception('Get Loans API failed: ${response.body}');
+      throw Exception('Get loans failed: ${response.body}');
     }
   }
 
@@ -23,7 +23,7 @@ class LoansApiService {
     if (response.statusCode == 201 || response.statusCode == 200) {
       return jsonDecode(response.body)['affectedRows'] == 2 ? true : false;
     } else {
-      throw Exception('Add Loan failed: ${response.body}');
+      throw Exception('Add loan failed: ${response.body}');
     }
   }
 
@@ -35,7 +35,7 @@ class LoansApiService {
     if (response.statusCode == 201 || response.statusCode == 200) {
       return jsonDecode(response.body)['affectedRows'] == 2 ? true : false;
     } else {
-      throw Exception('Update Loan failed: ${response.body}');
+      throw Exception('Update loan failed: ${response.body}');
     }
   }
 
@@ -45,7 +45,7 @@ class LoansApiService {
     if (response.statusCode == 200) {
       return LoanModel.fromJson(jsonDecode(response.body).first);
     } else {
-      throw Exception('Get Loan by ID failed: ${response.body}');
+      throw Exception('Get loan by ID failed: ${response.body}');
     }
   }
 
@@ -54,7 +54,7 @@ class LoansApiService {
     final http.Response response = await http.delete(Uri.parse('$baseUrl/$id'));
 
     if (response.statusCode != 200 && response.statusCode != 204) {
-      throw Exception('Delete Loan failed: ${response.body}');
+      throw Exception('Delete loan failed: ${response.body}');
     }
   }
 }

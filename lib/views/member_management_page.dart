@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sinking_fund_manager/controllers/contribution_controller.dart';
 import 'package:sinking_fund_manager/models/setting_model.dart';
 import 'package:sinking_fund_manager/models/summary_model.dart';
 
@@ -13,6 +14,7 @@ import '../controllers/member_controller.dart';
 import '../api_services/members_api_service.dart';
 import '../controllers/setting_controller.dart';
 import '../controllers/summary_controller.dart';
+import '../models/contribution_model.dart';
 import '../models/member_model.dart';
 import '../../../views/member_item.dart';
 import '../utils/formatters.dart';
@@ -213,6 +215,7 @@ class _MemberManagementPageState extends ConsumerState<MemberManagementPage> {
     final List<MemberModel> members = ref.watch(memberControllerProvider);
     final SettingModel? setting = ref.watch(settingControllerProvider);
     final SummaryModel? summary = ref.watch(summaryControllerProvider);
+    final List<ContributionModel> contributions = ref.watch(contributionControllerProvider);
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         tooltip: 'Add Member',
@@ -290,6 +293,16 @@ class _MemberManagementPageState extends ConsumerState<MemberManagementPage> {
                                     itemBuilder: (BuildContext ctx, int idx) => Dismissible(
                                       key: ValueKey<String>(members[idx].id),
                                       confirmDismiss: (DismissDirection direction) async {
+                                        if (contributions.where((ContributionModel c) => c.memberId == members[idx].id).isNotEmpty) {
+                                          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(
+                                              content: Text('Only members without contributions can be deleted.', style: TextStyle(color: Colors.white)),
+                                              backgroundColor: Colors.orange,
+                                            ),
+                                          );
+                                          return false;
+                                        }
                                         return await showConfirmDialog(context: context, title: 'Confirm Deletion', message: 'Are you sure you want to delete "${members[idx].name}"?', confirmText: 'Delete', cancelText: 'Cancel');
                                       },
                                       onDismissed: (DismissDirection direction) async {
@@ -299,7 +312,7 @@ class _MemberManagementPageState extends ConsumerState<MemberManagementPage> {
                                           if (context.mounted) {
                                             ref.read(memberControllerProvider.notifier).deleteMember(members[idx]);
                                             ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Member "${members[idx].name}" was successfully deleted!'), duration: const Duration(seconds: 5)));
+                                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Member "${members[idx].name}" was successfully deleted!')));
                                           }
                                         } catch (e) {
                                           if (context.mounted) {

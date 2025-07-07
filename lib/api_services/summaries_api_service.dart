@@ -17,7 +17,7 @@ class SummariesApiService {
         return null;
       }
     } else {
-      throw Exception('Get Summary API failed: ${response.body}');
+      throw Exception('Get summary failed: ${response.body}');
     }
   }
 
@@ -28,7 +28,7 @@ class SummariesApiService {
     if (response.statusCode == 201 || response.statusCode == 200) {
       return jsonDecode(response.body)['affectedRows'] == 1 ? true : false;
     } else {
-      throw Exception('Add Summary failed: ${response.body}');
+      throw Exception('Add summary failed: ${response.body}');
     }
   }
 
@@ -38,7 +38,7 @@ class SummariesApiService {
     if (response.statusCode == 201 || response.statusCode == 200) {
       return jsonDecode(response.body)['affectedRows'] == 1 ? true : false;
     } else {
-      throw Exception('Update Summary failed: ${response.body}');
+      throw Exception('Update summary failed: ${response.body}');
     }
   }
 
@@ -48,7 +48,7 @@ class SummariesApiService {
     if (response.statusCode == 200) {
       return true;
     } else {
-      throw Exception('Delete Summary failed: ${response.body}');
+      throw Exception('Delete summary failed: ${response.body}');
     }
   }
 }

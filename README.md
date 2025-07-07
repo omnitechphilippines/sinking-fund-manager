@@ -97,7 +97,7 @@ A Flutter app designed to help small cooperatives or families manage a sinking f
 - Flutter SDK `v3.32.1`
 - Dart SDK `v3.8.1`
 
-### Run the game
+### Run the app
 
 ```bash
 # Clone the repo

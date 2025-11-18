@@ -4,12 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:sinking_fund_manager/controllers/loan_tracker_controller.dart';
 import 'package:sinking_fund_manager/models/loan_tracker_model.dart';
 
-import '../../components/footer.dart';
-import '../../components/side_nav.dart';
-import '../../components/custom_app_bar.dart';
 import '../api_services/loans_api_service.dart';
-import '../components/confirm_dialog.dart';
-import '../components/loan_dialog.dart';
 import '../controllers/loan_controller.dart';
 import '../controllers/setting_controller.dart';
 import '../controllers/summary_controller.dart';
@@ -17,7 +12,12 @@ import '../models/loan_model.dart';
 import '../models/setting_model.dart';
 import '../models/summary_model.dart';
 import '../utils/formatters.dart';
-import 'loan_item.dart';
+import '../widgets/app_bars/custom_app_bar.dart';
+import '../widgets/cards/loan_item.dart';
+import '../widgets/dialogs/confirm_dialog.dart';
+import '../widgets/dialogs/loan_dialog.dart';
+import '../widgets/drawers/side_drawer.dart';
+import '../widgets/footers/footer.dart';
 
 class LoanManagementPage extends ConsumerStatefulWidget {
   const LoanManagementPage({super.key});
@@ -233,7 +233,7 @@ class _HomePageState extends ConsumerState<LoanManagementPage> {
         child: Icon(Icons.add, color: setting != null ? null : Colors.white),
       ),
       appBar: const CustomAppBar(title: 'Loan Management'),
-      drawer: SideNav(currentRoute: GoRouter.of(context).routerDelegate.currentConfiguration.uri.toString()),
+      drawer: SideDrawer(currentRoute: GoRouter.of(context).routerDelegate.currentConfiguration.uri.toString()),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : loans.isEmpty
@@ -326,7 +326,7 @@ class _HomePageState extends ConsumerState<LoanManagementPage> {
                                     itemBuilder: (BuildContext ctx, int idx) => Dismissible(
                                       key: ValueKey<String>(loans[idx].id),
                                       confirmDismiss: (DismissDirection direction) async {
-                                        if (loanTrackers.where(( LoanTrackerModel lt) => lt.loanId == loans[idx].id).isNotEmpty) {
+                                        if (loanTrackers.where((LoanTrackerModel lt) => lt.loanId == loans[idx].id).isNotEmpty) {
                                           ScaffoldMessenger.of(context).hideCurrentSnackBar();
                                           ScaffoldMessenger.of(context).showSnackBar(
                                             const SnackBar(

@@ -8,13 +8,13 @@ import 'package:sinking_fund_manager/models/loan_tracker_model.dart';
 import 'package:sinking_fund_manager/utils/currency_formatter.dart';
 import 'package:uuid/uuid.dart';
 
-import '../api_services/loans_api_service.dart';
-import '../controllers/loan_tracker_controller.dart';
-import '../controllers/setting_controller.dart';
-import '../models/member_model.dart';
-import '../models/summary_model.dart';
-import '../utils/formatters.dart';
-import '../widgets/buttons/custom_icon_button.dart';
+import '../../api_services/loans_api_service.dart';
+import '../../controllers/loan_tracker_controller.dart';
+import '../../controllers/setting_controller.dart';
+import '../../models/member_model.dart';
+import '../../models/summary_model.dart';
+import '../../utils/formatters.dart';
+import '../buttons/custom_icon_button.dart';
 import 'confirm_dialog.dart';
 
 class LoanDialog extends ConsumerStatefulWidget {
@@ -77,7 +77,7 @@ class _LoanDialogState extends ConsumerState<LoanDialog> {
         _paymentStartDateController.text = dateFormatter.format(DateTime(now.year, now.month + 1, 15));
       }
       _nameControllerFocusNode.requestFocus();
-      WidgetsBinding.instance.addPostFrameCallback((Duration _) => ref.read(memberControllerProvider.notifier).setSort(MemberSortType.name,MemberSortDirection.ascending));
+      WidgetsBinding.instance.addPostFrameCallback((Duration _) => ref.read(memberControllerProvider.notifier).setSort(MemberSortType.name, MemberSortDirection.ascending));
     }
   }
 
@@ -311,7 +311,7 @@ class _LoanDialogState extends ConsumerState<LoanDialog> {
                               child: DropdownButtonFormField<String>(
                                 focusNode: _comakerControllerFocusNode,
                                 style: TextStyle(fontSize: Theme.of(context).textTheme.titleLarge?.fontSize, color: Theme.of(context).textTheme.titleLarge?.color),
-                                value: _selectedMember.isNotEmpty ? _selectedMember : null,
+                                initialValue: _selectedMember.isNotEmpty ? _selectedMember : null,
                                 decoration: const InputDecoration(labelText: 'Comaker (optional)'),
                                 items: ref
                                     .read(memberControllerProvider)

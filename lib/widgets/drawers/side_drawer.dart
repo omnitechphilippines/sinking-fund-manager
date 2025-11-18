@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-class SideNav extends StatelessWidget {
+class SideDrawer extends StatelessWidget {
   final String currentRoute;
 
-  const SideNav({super.key, required this.currentRoute});
+  const SideDrawer({super.key, required this.currentRoute});
 
   @override
   Widget build(BuildContext context) {
@@ -14,8 +14,14 @@ class SideNav extends StatelessWidget {
       child: ListView(
         children: <Widget>[
           const DrawerHeader(
-            decoration: BoxDecoration(gradient: LinearGradient(colors: <Color>[Color(0xFF1A2226), Color(0xFF1A2226)], begin: Alignment.topLeft, end: Alignment.bottomRight)),
-            child: Text('Sinking Fund Manager', style: TextStyle(color: Color(0xFFECECEC), fontSize: 32, fontWeight: FontWeight.bold), textAlign: TextAlign.center,),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: <Color>[Color(0xFF1A2226), Color(0xFF1A2226)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+            ),
+            child: Text(
+              'Sinking Fund Manager',
+              style: TextStyle(color: Color(0xFFECECEC), fontSize: 32, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
           ),
           HoverListTile(icon: Icons.people, title: 'Member Management', route: '/member-management', currentRoute: currentRoute),
           HoverListTile(icon: Icons.money, title: 'Contribution Tracking', route: '/contribution-tracking', currentRoute: currentRoute),

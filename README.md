@@ -77,16 +77,7 @@ A Flutter app designed to help small cooperatives or families manage a sinking f
 
 ## 📦 Download Latest Releases
 
-- 💻 **Windows (.7z):**  
-  [Download for Windows {{VERSION}}](https://github.com/omnitechphilippines/sinking-fund-manager/releases/download/{{ENCODED_VERSION}}/windows-release-{{ENCODED_VERSION}}.7z)
-
-- 📱 **Android (.apk):**  
-  [Download for Android {{VERSION}}](https://github.com/omnitechphilippines/sinking-fund-manager/releases/download/{{ENCODED_VERSION}}/app-release-{{ENCODED_VERSION}}.apk)
-
-- 🌐 **Web build (.7z):**  
-  [Download Web Build {{VERSION}}](https://github.com/omnitechphilippines/sinking-fund-manager/releases/download/{{ENCODED_VERSION}}/web-release-{{ENCODED_VERSION}}.7z)
-
-> You can also find all versions in the [Releases Page](https://github.com/omnitechphilippines/sinking-fund-manager/releases)
+You can also find all versions in the [Releases Page](https://github.com/omnitechphilippines/sinking-fund-manager/releases)
 
 ---
 
@@ -94,8 +85,8 @@ A Flutter app designed to help small cooperatives or families manage a sinking f
 
 ### Prerequisites
 
-- Flutter SDK `v3.32.1`
-- Dart SDK `v3.8.1`
+- Flutter SDK `v3.38.1`
+- Dart SDK `v3.10.0`
 
 ### Run the app
 
@@ -116,4 +107,3 @@ flutter run -d windows
 
 # Run the app (Android)
 flutter run -d android
-

@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import '../models/member_model.dart';
 
 class MembersApiService {
-  static const String baseUrl = 'http://localhost:1880/api/v1/members';
+  static const String baseUrl = 'https://nodered-omnitech.onrender.com/api/v1/members';
 
   /// Get all members
   Future<List<MemberModel>> getMembers() async {
@@ -19,11 +19,7 @@ class MembersApiService {
 
   /// Add a new member
   Future<bool> addMember(MemberModel member) async {
-    final http.Response response = await http.post(
-      Uri.parse(baseUrl),
-      headers: <String, String>{'Content-Type': 'application/json'},
-      body: jsonEncode(member.toJson()),
-    );
+    final http.Response response = await http.post(Uri.parse(baseUrl), headers: <String, String>{'Content-Type': 'application/json'}, body: jsonEncode(member.toJson()));
 
     if (response.statusCode == 201 || response.statusCode == 200) {
       return jsonDecode(response.body)['affectedRows'] == 1 ? true : false;

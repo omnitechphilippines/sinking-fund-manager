@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sinking_fund_manager/controllers/summary_controller.dart';
 import 'package:sinking_fund_manager/models/contribution_model.dart';
 import 'package:uuid/uuid.dart';
 
-import '../api_services/contributions_api_service.dart';
-import '../api_services/members_api_service.dart';
-import '../controllers/contribution_controller.dart';
-import '../controllers/setting_controller.dart';
-import '../models/member_model.dart';
-import '../utils/formatters.dart';
-import '../widgets/buttons/custom_icon_button.dart';
+import '../../api_services/contributions_api_service.dart';
+import '../../api_services/members_api_service.dart';
+import '../../controllers/contribution_controller.dart';
+import '../../controllers/setting_controller.dart';
+import '../../models/member_model.dart';
+import '../../models/summary_model.dart';
+import '../../utils/formatters.dart';
+import '../buttons/custom_icon_button.dart';
 import 'confirm_dialog.dart';
 
 class MemberDialog extends ConsumerStatefulWidget {
@@ -24,7 +26,6 @@ class MemberDialog extends ConsumerStatefulWidget {
 
 class _MemberDialogState extends ConsumerState<MemberDialog> {
   bool _isLoading = false;
-  bool _isDeleteLoading = false;
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _numberOfHeadsController = TextEditingController();
   final TextEditingController _contributionAmountController = TextEditingController();
@@ -267,15 +268,24 @@ class _MemberDialogState extends ConsumerState<MemberDialog> {
                                             );
                                           },
                                           onDismissed: (DismissDirection direction) async {
-                                            setState(() => _isDeleteLoading = true);
+                                            final ContributionModel deleted = contributionsById[idx];
+                                            setState(() {
+                                              contributionsById.removeAt(idx);
+                                              _isLoading = true;
+                                            });
                                             try {
-                                              await ContributionsApiService().deleteContributionById(contributionsById[idx].id, contributionsById[idx].contributionAmount);
+                                              await ContributionsApiService().deleteContributionById(deleted.id, deleted.contributionAmount);
+                                              ref.read(contributionControllerProvider.notifier).deleteContribution(deleted);
+                                              final SummaryModel? summary = ref.read(summaryControllerProvider);
+                                              ref.read(summaryControllerProvider.notifier).editSummary(totalContribution: summary!.totalContribution - deleted.contributionAmount, totalCashOnHand: summary.totalCashOnHand - deleted.contributionAmount);
                                               if (context.mounted) {
-                                                ref.read(contributionControllerProvider.notifier).deleteContribution(contributionsById[idx]);
                                                 ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Contribution of member "${contributionsById[idx].memberName}" was successfully deleted!')));
+                                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Contribution of member "${deleted.memberName}" was successfully deleted!')));
                                               }
                                             } catch (e) {
+                                              setState(() {
+                                                contributionsById.insert(idx, deleted);
+                                              });
                                               if (context.mounted) {
                                                 ScaffoldMessenger.of(context).hideCurrentSnackBar();
                                                 ScaffoldMessenger.of(context).showSnackBar(
@@ -286,34 +296,32 @@ class _MemberDialogState extends ConsumerState<MemberDialog> {
                                                 );
                                               }
                                             } finally {
-                                              setState(() => _isDeleteLoading = false);
+                                              setState(() => _isLoading = false);
                                             }
                                           },
                                           background: Container(color: Theme.of(context).colorScheme.error.withValues(alpha: 0.75), margin: Theme.of(context).cardTheme.margin),
-                                          child: _isDeleteLoading
-                                              ? const Center(child: CircularProgressIndicator())
-                                              : Card(
-                                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                                                  color: !isFullyPaid && contributionsById[idx].contributionDate == contributionsById.last.contributionDate ? Colors.red.shade800 : null,
-                                                  child: ListTile(
-                                                    title: Text('₱ ${contributionsById[idx].formattedContributionAmount}   ${contributionsById[idx].formattedContributionDate}', style: Theme.of(context).textTheme.titleMedium),
-                                                    subtitle: Text('Paid: ${contributionsById[idx].formattedPaymentDateTime}', style: TextStyle(fontSize: Theme.of(context).textTheme.bodySmall?.fontSize)),
-                                                    trailing: contributionsById[idx].proof != null
-                                                        ? InkWell(
-                                                            onTap: () {
-                                                              showDialog(
-                                                                context: context,
-                                                                builder: (BuildContext context) => Dialog(
-                                                                  insetPadding: const EdgeInsets.all(16),
-                                                                  child: InteractiveViewer(child: Image.memory(contributionsById[idx].proof!)),
-                                                                ),
-                                                              );
-                                                            },
-                                                            child: Image.memory(contributionsById[idx].proof!),
-                                                          )
-                                                        : null,
-                                                  ),
-                                                ),
+                                          child: Card(
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                                            color: !isFullyPaid && contributionsById[idx].contributionDate == contributionsById.last.contributionDate ? Colors.red.shade800 : null,
+                                            child: ListTile(
+                                              title: Text('₱ ${contributionsById[idx].formattedContributionAmount}   ${contributionsById[idx].formattedContributionDate}', style: Theme.of(context).textTheme.titleMedium),
+                                              subtitle: Text('Paid: ${contributionsById[idx].formattedPaymentDateTime}', style: TextStyle(fontSize: Theme.of(context).textTheme.bodySmall?.fontSize)),
+                                              trailing: contributionsById[idx].proof != null
+                                                  ? InkWell(
+                                                      onTap: () {
+                                                        showDialog(
+                                                          context: context,
+                                                          builder: (BuildContext context) => Dialog(
+                                                            insetPadding: const EdgeInsets.all(16),
+                                                            child: InteractiveViewer(child: Image.memory(contributionsById[idx].proof!)),
+                                                          ),
+                                                        );
+                                                      },
+                                                      child: Image.memory(contributionsById[idx].proof!),
+                                                    )
+                                                  : null,
+                                            ),
+                                          ),
                                         );
                                       },
                                     ),

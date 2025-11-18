@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import '../models/setting_model.dart';
 
 class SettingsApiService {
-  static const String baseUrl = 'http://localhost:1880/api/v1/settings';
+  static const String baseUrl = 'https://nodered-omnitech.onrender.com/api/v1/settings';
 
   /// Get setting
   Future<SettingModel?> getSetting() async {

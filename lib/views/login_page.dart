@@ -50,7 +50,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   Widget build(BuildContext context) {
     ref.listen<AuthModel>(authControllerProvider, (AuthModel? previous, AuthModel next) {
       if (next.status == AuthStatus.loading) {
-        showDialog(context: context, barrierDismissible: false, builder: (BuildContext _) => const Center(child: CircularProgressIndicator()));
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext _) => const Center(child: CircularProgressIndicator()),
+        );
       } else {
         if (Navigator.canPop(context)) Navigator.pop(context);
       }
@@ -63,11 +67,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         showDialog(
           context: context,
           builder: (BuildContext _) => AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-              title: const Text('Login Failed'),
-              content: Text(next.error.toString().contains('fetch') ? 'Server connection error!' : next.error ?? 'Incorrect user name or password'),
-              actions: <Widget>[TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))],
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+            title: const Text('Login Failed'),
+            content: Text(next.error.toString().contains('fetch') ? 'Server connection error!' : next.error ?? 'Incorrect user name or password'),
+            actions: <Widget>[TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))],
+          ),
         );
       }
     });
@@ -82,8 +86,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   spacing: 18,
                   children: <Widget>[
-                    SizedBox(width: 500, child: Container(margin: const EdgeInsets.all(16), child: Image.asset('assets/images/sinking-fund.jpg'))),
-                    const Text('SINKING FUND MANAGER', style: TextStyle(color: Colors.blue, fontSize: 32, fontWeight: FontWeight.bold)),
+                    SizedBox(
+                      width: 500,
+                      child: Container(margin: const EdgeInsets.all(16), child: Image.asset('assets/images/sinking-fund.jpg')),
+                    ),
+                    const Text(
+                      'SINKING FUND MANAGER',
+                      style: TextStyle(color: Colors.blue, fontSize: 32, fontWeight: FontWeight.bold),
+                    ),
                     SizedBox(
                       width: 450,
                       child: Card(
@@ -99,7 +109,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                               const SizedBox(height: 16),
                               const Text('LOGIN CREDENTIALS', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                               const SizedBox(height: 16),
-                              CustomTextField(prefixIcon: const Icon(Icons.person), controller: _userIdController, hintText: 'User Name', obscureText: false, focusNode: _userIdFocus, onSubmitted: (String _) => _passwordFocus.requestFocus(), radius: 50),
+                              CustomTextField(
+                                prefixIcon: const Icon(Icons.person),
+                                controller: _userIdController,
+                                hintText: 'User Name',
+                                obscureText: false,
+                                focusNode: _userIdFocus,
+                                onSubmitted: (String _) => _passwordFocus.requestFocus(),
+                                radius: 50,
+                              ),
                               const SizedBox(height: 12),
                               CustomTextField(
                                 controller: _passwordController,
@@ -127,7 +145,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           ),
         ],
       ),
-      bottomNavigationBar: Container(color: const Color(0xFF3F4454), padding: const EdgeInsets.all(8.0), child: Text(info==null?'':'V${info?.version}+${info?.buildNumber}', textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleSmall)),
+      bottomNavigationBar: Container(
+        color: const Color(0xFF3F4454),
+        padding: const EdgeInsets.all(8.0),
+        child: Text(info == null ? '' : 'V${info?.version}+${info?.buildNumber}', textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleSmall),
+      ),
     );
   }
 }

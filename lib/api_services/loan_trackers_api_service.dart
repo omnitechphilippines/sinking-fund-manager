@@ -6,7 +6,7 @@ import 'package:mime/mime.dart';
 import '../models/loan_tracker_model.dart';
 
 class LoanTrackersApiService {
-  static const String baseUrl = 'http://localhost:1880/api/v1/loan-trackers';
+  static const String baseUrl = 'https://nodered-omnitech.onrender.com/api/v1/loan-trackers';
 
   /// Get all loan trackers
   Future<List<LoanTrackerModel>> getLoanTrackers() async {

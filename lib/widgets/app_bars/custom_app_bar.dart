@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive_flutter/adapters.dart';
 
-import '../controllers/auth_controller.dart';
-import '../models/auth_model.dart';
-import 'setting_dialog.dart';
+import '../../controllers/auth_controller.dart';
+import '../../models/auth_model.dart';
+import '../dialogs/setting_dialog.dart';
 
 class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final String title;

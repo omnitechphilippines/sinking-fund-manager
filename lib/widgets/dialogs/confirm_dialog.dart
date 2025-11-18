@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../widgets/buttons/custom_icon_button.dart';
+import '../buttons/custom_icon_button.dart';
 
 Future<bool> showConfirmDialog({required BuildContext context, required String title, required String message, String cancelText = 'Cancel', String confirmText = 'Delete', Color? confirmColor, Color? cancelColor}) {
   return showDialog<bool>(

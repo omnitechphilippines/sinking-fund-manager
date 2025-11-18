@@ -4,7 +4,6 @@ import 'package:sinking_fund_manager/models/loan_tracker_model.dart';
 import '../api_services/loan_trackers_api_service.dart';
 
 class LoanTrackerController extends Notifier<List<LoanTrackerModel>> {
-
   @override
   List<LoanTrackerModel> build() => <LoanTrackerModel>[];
 

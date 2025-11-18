@@ -6,11 +6,11 @@ import 'package:sinking_fund_manager/controllers/summary_controller.dart';
 import 'package:sinking_fund_manager/models/summary_model.dart';
 import 'package:uuid/uuid.dart';
 
-import '../api_services/contributions_api_service.dart';
-import '../models/contribution_model.dart';
-import '../utils/currency_formatter.dart';
-import '../utils/formatters.dart';
-import '../widgets/buttons/custom_icon_button.dart';
+import '../../api_services/contributions_api_service.dart';
+import '../../models/contribution_model.dart';
+import '../../utils/currency_formatter.dart';
+import '../../utils/formatters.dart';
+import '../buttons/custom_icon_button.dart';
 
 class ContributionDialog extends ConsumerStatefulWidget {
   final String id;

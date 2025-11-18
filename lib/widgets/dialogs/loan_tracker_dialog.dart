@@ -8,11 +8,11 @@ import 'package:sinking_fund_manager/controllers/summary_controller.dart';
 import 'package:sinking_fund_manager/models/loan_model.dart';
 import 'package:uuid/uuid.dart';
 
-import '../models/loan_tracker_model.dart';
-import '../models/summary_model.dart';
-import '../utils/currency_formatter.dart';
-import '../utils/formatters.dart';
-import '../widgets/buttons/custom_icon_button.dart';
+import '../../models/loan_tracker_model.dart';
+import '../../models/summary_model.dart';
+import '../../utils/currency_formatter.dart';
+import '../../utils/formatters.dart';
+import '../buttons/custom_icon_button.dart';
 
 class LoanTrackerDialog extends ConsumerStatefulWidget {
   final LoanModel loan;
@@ -138,7 +138,9 @@ class _LoanTrackerDialogState extends ConsumerState<LoanTrackerDialog> {
         updatedLoan.currentPaymentDueDate,
       );
       if (response && mounted) {
-        ref.read(summaryControllerProvider.notifier).editSummary(totalUnpaidLoan: summary!.totalUnpaidLoan - newLoanTracker.giveAmount,totalPaidLoan: summary.totalPaidLoan + newLoanTracker.giveAmount, totalCashOnHand: summary.totalCashOnHand + newLoanTracker.giveAmount);
+        ref
+            .read(summaryControllerProvider.notifier)
+            .editSummary(totalUnpaidLoan: summary!.totalUnpaidLoan - newLoanTracker.giveAmount, totalPaidLoan: summary.totalPaidLoan + newLoanTracker.giveAmount, totalCashOnHand: summary.totalCashOnHand + newLoanTracker.giveAmount);
         Navigator.of(context).pop(<Object>[newLoanTracker, updatedLoan]);
       } else {
         if (mounted) {

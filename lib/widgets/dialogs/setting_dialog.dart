@@ -3,11 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sinking_fund_manager/api_services/settings_api_service.dart';
 
-import '../controllers/setting_controller.dart';
-import '../utils/currency_formatter.dart';
-import '../utils/formatters.dart';
-import '../widgets/buttons/custom_icon_button.dart';
-import '../models/setting_model.dart';
+import '../../controllers/setting_controller.dart';
+import '../../models/setting_model.dart';
+import '../../utils/currency_formatter.dart';
+import '../../utils/formatters.dart';
+import '../buttons/custom_icon_button.dart';
 
 class SettingDialog extends ConsumerStatefulWidget {
   const SettingDialog({super.key});
@@ -226,7 +226,7 @@ class _SettingDialogState extends ConsumerState<SettingDialog> {
                         child: DropdownButtonFormField<ContributionPeriod>(
                           focusNode: _contributionPeriodControllerFocusNode,
                           style: TextStyle(fontSize: Theme.of(context).textTheme.titleLarge?.fontSize, color: Theme.of(context).textTheme.titleLarge?.color),
-                          value: _selectedContributionPeriodType,
+                          initialValue: _selectedContributionPeriodType,
                           decoration: InputDecoration(
                             labelText: 'Contribution Period',
                             labelStyle: TextStyle(fontWeight: FontWeight.normal, color: Theme.of(context).textTheme.titleLarge?.color),

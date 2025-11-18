@@ -5,19 +5,19 @@ import 'package:sinking_fund_manager/controllers/contribution_controller.dart';
 import 'package:sinking_fund_manager/models/setting_model.dart';
 import 'package:sinking_fund_manager/models/summary_model.dart';
 
-import '../../../../components/footer.dart';
-import '../../../../components/side_nav.dart';
-import '../../../../components/custom_app_bar.dart';
-import '../../../components/confirm_dialog.dart';
-import '../../../components/member_dialog.dart';
 import '../controllers/member_controller.dart';
 import '../api_services/members_api_service.dart';
 import '../controllers/setting_controller.dart';
 import '../controllers/summary_controller.dart';
 import '../models/contribution_model.dart';
 import '../models/member_model.dart';
-import '../../../views/member_item.dart';
 import '../utils/formatters.dart';
+import '../widgets/app_bars/custom_app_bar.dart';
+import '../widgets/cards/member_item.dart';
+import '../widgets/dialogs/confirm_dialog.dart';
+import '../widgets/dialogs/member_dialog.dart';
+import '../widgets/drawers/side_drawer.dart';
+import '../widgets/footers/footer.dart';
 
 class MemberManagementPage extends ConsumerStatefulWidget {
   const MemberManagementPage({super.key});
@@ -224,7 +224,7 @@ class _MemberManagementPageState extends ConsumerState<MemberManagementPage> {
         child: Icon(Icons.add, color: setting != null ? null : Colors.white),
       ),
       appBar: const CustomAppBar(title: 'Member Management'),
-      drawer: SideNav(currentRoute: GoRouter.of(context).routerDelegate.currentConfiguration.uri.toString()),
+      drawer: SideDrawer(currentRoute: GoRouter.of(context).routerDelegate.currentConfiguration.uri.toString()),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : members.isEmpty

@@ -6,7 +6,7 @@ import 'package:mime/mime.dart';
 import '../models/contribution_model.dart';
 
 class ContributionsApiService {
-  static const String baseUrl = 'http://localhost:1880/api/v1/contributions';
+  static const String baseUrl = 'https://nodered-omnitech.onrender.com/api/v1/contributions';
 
   /// Get all contributions
   Future<List<ContributionModel>> getContributions() async {

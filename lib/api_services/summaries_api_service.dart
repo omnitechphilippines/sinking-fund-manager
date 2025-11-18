@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import '../models/summary_model.dart';
 
 class SummariesApiService {
-  static const String baseUrl = 'http://localhost:1880/api/v1/summaries';
+  static const String baseUrl = 'https://nodered-omnitech.onrender.com/api/v1/summaries';
 
   /// Get summary
   Future<SummaryModel?> getSummary() async {

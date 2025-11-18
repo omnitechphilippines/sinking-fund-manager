@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod/src/providers/provider.dart';
 
 import '../models/contribution_model.dart';
 import '../api_services/contributions_api_service.dart';
@@ -33,10 +34,7 @@ class ContributionController extends Notifier<List<ContributionModel>> {
 
 final NotifierProvider<ContributionController, List<ContributionModel>> contributionControllerProvider = NotifierProvider<ContributionController, List<ContributionModel>>(() => ContributionController());
 
-final contributionsByMemberIdProvider = Provider.family<List<ContributionModel>, String>((ref, memberId) {
-  final contributions = ref.watch(contributionControllerProvider);
-  return contributions
-      .where((c) => c.memberId == memberId)
-      .toList()
-    ..sort((a, b) => a.contributionDate.compareTo(b.contributionDate));
+final ProviderFamily<List<ContributionModel>, String> contributionsByMemberIdProvider = Provider.family<List<ContributionModel>, String>((Ref ref, String memberId) {
+  final List<ContributionModel> contributions = ref.watch(contributionControllerProvider);
+  return contributions.where((ContributionModel c) => c.memberId == memberId).toList()..sort((ContributionModel a, ContributionModel b) => a.contributionDate.compareTo(b.contributionDate));
 });

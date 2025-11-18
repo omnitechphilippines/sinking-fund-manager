@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sinking_fund_manager/components/member_dialog.dart';
 
-import '../components/confirm_dialog.dart';
-import '../components/contribution_dialog.dart';
-import '../controllers/member_controller.dart';
-import '../api_services/members_api_service.dart';
-import '../controllers/setting_controller.dart';
-import '../models/member_model.dart';
-import '../models/setting_model.dart';
-import '../controllers/contribution_controller.dart';
-import '../models/contribution_model.dart';
-import '../utils/formatters.dart';
+import '../../api_services/members_api_service.dart';
+import '../../controllers/contribution_controller.dart';
+import '../../controllers/member_controller.dart';
+import '../../controllers/setting_controller.dart';
+import '../../models/contribution_model.dart';
+import '../../models/member_model.dart';
+import '../../models/setting_model.dart';
+import '../../utils/formatters.dart';
+import '../dialogs/confirm_dialog.dart';
+import '../dialogs/contribution_dialog.dart';
+import '../dialogs/member_dialog.dart';
 
 class MemberItem extends ConsumerStatefulWidget {
   final MemberModel member;
@@ -87,7 +87,10 @@ class _MemberItemState extends ConsumerState<MemberItem> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Text('Due Date: ', style: Theme.of(context).textTheme.titleLarge),
-                        Text(dateFormatter.format(_contributionDate), style: TextStyle(color: DateTime.now().difference(_contributionDate).inDays > 0 ? Colors.red : Colors.blue, fontWeight: FontWeight.bold)),
+                        Text(
+                          dateFormatter.format(_contributionDate),
+                          style: TextStyle(color: DateTime.now().difference(_contributionDate).inDays > 0 ? Colors.red : Colors.blue, fontWeight: FontWeight.bold),
+                        ),
                       ],
                     ),
                     Row(
@@ -127,65 +130,67 @@ class _MemberItemState extends ConsumerState<MemberItem> {
                               : null,
                           icon: Icon(Icons.add_circle_sharp, color: setting != null ? null : Colors.grey.shade600),
                         ),
-                        _contributionsById.isEmpty ? IconButton(
-                          tooltip: 'Delete Member',
-                          onPressed: () async {
-                            final bool shouldDelete = await showConfirmDialog(context: context, title: 'Confirm Deletion', message: 'Are you sure you want to delete "${widget.member.name}"?', confirmText: 'Delete', cancelText: 'Cancel');
-                            setState(() => _isLoading = true);
-                            try {
-                              if (shouldDelete) {
-                                await MembersApiService().deleteMemberById(widget.member.id);
-                                if (context.mounted) {
-                                  ref.read(memberControllerProvider.notifier).deleteMember(widget.member);
-                                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Member "${widget.member.name}" was successfully deleted!')));
-                                }
-                              }
-                            } catch (e) {
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    backgroundColor: Colors.red,
-                                    content: Text('Error: $e', style: const TextStyle(color: Colors.white)),
-                                  ),
-                                );
-                              }
-                            } finally {
-                              setState(() => _isLoading = false);
-                            }
-                          },
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                        ) : IconButton(
-                          tooltip: 'Disable Member',
-                          onPressed: () async {
-                            final bool shouldDelete = await showConfirmDialog(context: context, title: 'Confirm Deactivation', message: 'Are you sure you want to disable "${widget.member.name}"?', confirmText: 'Disable', cancelText: 'Cancel');
-                            setState(() => _isLoading = true);
-                            try {
-                              if (shouldDelete) {
-                                await MembersApiService().deleteMemberById(widget.member.id);
-                                if (context.mounted) {
-                                  ref.read(memberControllerProvider.notifier).deleteMember(widget.member);
-                                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Member "${widget.member.name}" was successfully disabled!')));
-                                }
-                              }
-                            } catch (e) {
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    backgroundColor: Colors.red,
-                                    content: Text('Error: $e', style: const TextStyle(color: Colors.white)),
-                                  ),
-                                );
-                              }
-                            } finally {
-                              setState(() => _isLoading = false);
-                            }
-                          },
-                          icon: const Icon(Icons.do_disturb_alt_outlined , color: Colors.grey),
-                        ),
+                        _contributionsById.isEmpty
+                            ? IconButton(
+                                tooltip: 'Delete Member',
+                                onPressed: () async {
+                                  final bool shouldDelete = await showConfirmDialog(context: context, title: 'Confirm Deletion', message: 'Are you sure you want to delete "${widget.member.name}"?', confirmText: 'Delete', cancelText: 'Cancel');
+                                  setState(() => _isLoading = true);
+                                  try {
+                                    if (shouldDelete) {
+                                      await MembersApiService().deleteMemberById(widget.member.id);
+                                      if (context.mounted) {
+                                        ref.read(memberControllerProvider.notifier).deleteMember(widget.member);
+                                        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Member "${widget.member.name}" was successfully deleted!')));
+                                      }
+                                    }
+                                  } catch (e) {
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          backgroundColor: Colors.red,
+                                          content: Text('Error: $e', style: const TextStyle(color: Colors.white)),
+                                        ),
+                                      );
+                                    }
+                                  } finally {
+                                    setState(() => _isLoading = false);
+                                  }
+                                },
+                                icon: const Icon(Icons.delete, color: Colors.red),
+                              )
+                            : IconButton(
+                                tooltip: 'Disable Member',
+                                onPressed: () async {
+                                  final bool shouldDelete = await showConfirmDialog(context: context, title: 'Confirm Deactivation', message: 'Are you sure you want to disable "${widget.member.name}"?', confirmText: 'Disable', cancelText: 'Cancel');
+                                  setState(() => _isLoading = true);
+                                  try {
+                                    if (shouldDelete) {
+                                      await MembersApiService().deleteMemberById(widget.member.id);
+                                      if (context.mounted) {
+                                        ref.read(memberControllerProvider.notifier).deleteMember(widget.member);
+                                        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Member "${widget.member.name}" was successfully disabled!')));
+                                      }
+                                    }
+                                  } catch (e) {
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          backgroundColor: Colors.red,
+                                          content: Text('Error: $e', style: const TextStyle(color: Colors.white)),
+                                        ),
+                                      );
+                                    }
+                                  } finally {
+                                    setState(() => _isLoading = false);
+                                  }
+                                },
+                                icon: const Icon(Icons.do_disturb_alt_outlined, color: Colors.grey),
+                              ),
                       ],
                     ),
                   ],

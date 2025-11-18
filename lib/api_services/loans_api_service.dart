@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import '../models/loan_model.dart';
 
 class LoansApiService {
-  static const String baseUrl = 'http://localhost:1880/api/v1/loans';
+  static const String baseUrl = 'https://nodered-omnitech.onrender.com/api/v1/loans';
 
   /// Get all loans
   Future<List<LoanModel>> getLoans() async {

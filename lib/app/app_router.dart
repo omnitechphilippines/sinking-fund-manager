@@ -1,7 +1,4 @@
-@JS('document')
-library;
-
-import 'dart:js_interop';
+import '../utils/document_title_stub.dart' if (dart.library.js_interop) '../utils/document_title_web.dart';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -13,9 +10,6 @@ import '../views/login_page.dart';
 import '../views/member_management_page.dart';
 import '../views/not_found_page.dart';
 import '../views/reports_page.dart';
-
-@JS('title')
-external set documentTitle(String title);
 
 class AppRouter {
   static final GoRouter router = GoRouter(

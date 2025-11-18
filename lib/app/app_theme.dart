@@ -29,7 +29,7 @@ class AppTheme {
     ),
   );
 
-  static ThemeData get darkTheme => ThemeData(
+  static ThemeData get darkTheme => ThemeData.dark().copyWith(
     colorScheme: darkColorScheme,
     cardTheme: CardThemeData(color: darkColorScheme.secondaryContainer, margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4)),
     elevatedButtonTheme: ElevatedButtonThemeData(
